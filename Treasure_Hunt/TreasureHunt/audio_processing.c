@@ -92,8 +92,11 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
 
 		bufferCounter=0;
-		chBSemSignal(&sendToComputer_sem);
-		toneFrequency=calculateMaxFrequency(micFront_output,FFT_SIZE);
+		//toDO for fanny:  filtering of unwanted frequencys and saving them in seperate variables
+
+		//please ignore
+		//chBSemSignal(&sendToComputer_sem);
+		//toneFrequency=calculateMaxFrequency(micFront_output,FFT_SIZE);
 	}
 
 }

@@ -19,6 +19,10 @@ typedef enum {
 	BACK_OUTPUT
 } BUFFER_NAME_t;
 
+typedef struct{
+	float realPart;
+	float imaginaryPart;
+} complexNumber_t;
 
 void processAudioData(int16_t *data, uint16_t num_samples);
 
