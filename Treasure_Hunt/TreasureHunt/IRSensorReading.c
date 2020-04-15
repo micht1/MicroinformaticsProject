@@ -89,10 +89,7 @@ bool isObstaclePresent(void)
 {
 	return processingValues.obstaclePresent;
 }
-int16_t getObstacleDirection(void)
-{
-	return processingValues.directionOfObstacle;
-}
+
 void ignoreObstacle(bool doIgnoreObstacle)
 {
 	processingValues.ignoringObstacle=doIgnoreObstacle;
