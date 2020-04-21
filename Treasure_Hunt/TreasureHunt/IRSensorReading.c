@@ -72,7 +72,7 @@ static THD_FUNCTION(IRSensorProcessing, arg) {
 
 
 }
-
+static float objectDirection=0;
 
 
 
@@ -93,4 +93,9 @@ bool isObstaclePresent(void)
 void ignoreObstacle(bool doIgnoreObstacle)
 {
 	processingValues.ignoringObstacle=doIgnoreObstacle;
+}
+
+float getObjectDirection(void)
+{
+	return objectDirection;
 }

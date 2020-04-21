@@ -16,5 +16,7 @@ bool isObstaclePresent(void);
 
 void ignoreObstacle(bool doIgnoreObstacle);
 
+float getObjectDirection(void);
+
 #endif
 
