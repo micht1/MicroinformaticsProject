@@ -26,6 +26,7 @@ const int8_t IRSensorDegree[PROXIMITY_NB_CHANNELS]={15,45,90,110,-110,-90,-45,-1
 
 
 static IRData processingValues;
+static float objectDirection=0;
 
 static THD_WORKING_AREA(IRSensorProcessing_wa, 512);
 static THD_FUNCTION(IRSensorProcessing, arg) {
@@ -72,7 +73,7 @@ static THD_FUNCTION(IRSensorProcessing, arg) {
 
 
 }
-static float objectDirection=0;
+
 
 
 
