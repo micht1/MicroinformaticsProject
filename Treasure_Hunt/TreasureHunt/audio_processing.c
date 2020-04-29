@@ -11,6 +11,7 @@
 #include <fft.h>
 #include <arm_math.h>
 
+
 //semaphore
 static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
 
@@ -24,7 +25,19 @@ static float micLeft_output[FFT_SIZE];
 static float micRight_output[FFT_SIZE];
 static float micFront_output[FFT_SIZE];
 static float micBack_output[FFT_SIZE];
+
 static float toneFrequency=0;
+static float relativeAngle=0;
+int Frequency_Position; //how can I use an int for the position if the result is a float
+
+static float FreqLeftR;
+static float FreqLeftI;
+static float FreqRightR;
+static float FreqRightI;
+static float FreqFrontR;
+static float FreqFrontI;
+static float FreqBackR;
+static float FreqBackI;
 
 /*
 *	Callback called when the demodulation of the four microphones is done.
@@ -92,11 +105,27 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
 
 		bufferCounter=0;
-		//toDO for fanny:  filtering of unwanted frequencys and saving them in seperate variables
+		//toDO :  filtering of unwanted frequencys and saving them in seperate variables
 
-		//please ignore
-		//chBSemSignal(&sendToComputer_sem);
-		//toneFrequency=calculateMaxFrequency(micFront_output,FFT_SIZE);
+
+		//calculation of the position
+
+		Frequency_Position=2*(Frequency_Goal/FREQUENCYCOEFFIZIENT);
+
+
+
+		FreqLeftR=micLeft_cmplx_input[Frequency_Position];
+		FreqLeftI=micLeft_cmplx_input[Frequency_Position+1];
+
+		FreqRightR=micRight_cmplx_input[Frequency_Position];
+		FreqRightI=micRight_cmplx_input[Frequency_Position+1];
+
+		FreqFrontR=micFront_cmplx_input[Frequency_Position];
+		FreqFrontI=micFront_cmplx_input[Frequency_Position+1];
+
+		FreqBackR=micBack_cmplx_input[Frequency_Position];
+		FreqBackI=micBack_cmplx_input[Frequency_Position+1];
+
 	}
 
 }
@@ -157,3 +186,11 @@ float getToneFrequency(void)
 {
 	return toneFrequency;
 }
+
+float getRelativeAngle(void)
+{
+	return relativeAngle;
+}
+
+
+
