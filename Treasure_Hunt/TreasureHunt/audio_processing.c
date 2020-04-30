@@ -28,16 +28,13 @@ static float micBack_output[FFT_SIZE];
 
 static float toneFrequency=0;
 static float relativeAngle=0;
-int Frequency_Position; //how can I use an int for the position if the result is a float
+int Frequency_Position;
 
-static float FreqLeftR;
-static float FreqLeftI;
-static float FreqRightR;
-static float FreqRightI;
-static float FreqFrontR;
-static float FreqFrontI;
-static float FreqBackR;
-static float FreqBackI;
+static complexNumber_t micLeftPhase;
+static complexNumber_t micRightPhase;
+static complexNumber_t micFrontPhase;
+static complexNumber_t micBackPhase;
+
 
 /*
 *	Callback called when the demodulation of the four microphones is done.
@@ -105,26 +102,25 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
 
 		bufferCounter=0;
-		//toDO :  filtering of unwanted frequencys and saving them in seperate variables
+
 
 
 		//calculation of the position
-
 		Frequency_Position=2*(Frequency_Goal/FREQUENCYCOEFFIZIENT);
 
+		//Filtering of the unwanted frequency and putting the good one in separated variables
+		micLeftPhase.realPart=micLeft_cmplx_input[Frequency_Position];
+		micLeftPhase.imaginaryPart=micLeft_cmplx_input[Frequency_Position+1];
 
+		micRightPhase.realPart=micRight_cmplx_input[Frequency_Position];
+		micRightPhase.imaginaryPart=micRight_cmplx_input[Frequency_Position+1];
 
-		FreqLeftR=micLeft_cmplx_input[Frequency_Position];
-		FreqLeftI=micLeft_cmplx_input[Frequency_Position+1];
+		micFrontPhase.realPart=micFront_cmplx_input[Frequency_Position];
+		micFrontPhase.imaginaryPart=micFront_cmplx_input[Frequency_Position+1];
 
-		FreqRightR=micRight_cmplx_input[Frequency_Position];
-		FreqRightI=micRight_cmplx_input[Frequency_Position+1];
+		micBackPhase.realPart=micBack_cmplx_input[Frequency_Position];
+		micBackPhase.imaginaryPart=micBack_cmplx_input[Frequency_Position+1];
 
-		FreqFrontR=micFront_cmplx_input[Frequency_Position];
-		FreqFrontI=micFront_cmplx_input[Frequency_Position+1];
-
-		FreqBackR=micBack_cmplx_input[Frequency_Position];
-		FreqBackI=micBack_cmplx_input[Frequency_Position+1];
 
 	}
 
