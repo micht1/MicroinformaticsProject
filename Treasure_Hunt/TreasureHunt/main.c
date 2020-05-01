@@ -11,6 +11,7 @@
 #include <motors.h>
 #include "driveMotors.h"
 #include <audio/microphone.h>
+#include "freeDirectionDetection.h"
 
 #include <audio_processing.h>
 #include <fft.h>
@@ -66,12 +67,12 @@ int main(void)
     //starts timer 12
     timer12_start();
     //inits the motors
-    //motors_init();
+    startDirectionDetectionThread();
     startMotors();
     //send_tab is used to save the state of the buffer to send (double buffering)
     //to avoid modifications of the buffer while sending it
     static float send_tab[FFT_SIZE];
-    int state=0;
+
 
 #ifdef SEND_FROM_MIC
     //starts the microphones processing thread.
@@ -106,42 +107,21 @@ int main(void)
 
 #endif  /* SEND_FROM_MIC */
 
-        chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
-        switch(state)
+       // chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
+        setScanningRange(-M_PI/4, 3*M_PI/4);
+        if(getScanStatus()==IDLE)
         {
-        case 0:
-        	setDesiredBearing(0);
-        	setDesiredSpeed(5);
-        	chThdSleepSeconds(1);
-
-        	if(getXPosition()>=10.0f)
-        	{
-        		//set_led(7,1);
-        		state=1;
-        	}
-        	break;
-        case 1:
-        	setDesiredBearing(-PI/2);
-        	if(getYPosition()<=-10.0f)
-        	{
-        		state=5;
-        	}
-
-
-			/*if(distance)
-			{
-				//set_led(7,1);
-				state=5;
-			}*/
-        	break;
-        default:
-        	setDesiredSpeed(0);
-        	//setDesiredBearing(0);
+        		doScanning(true);
         }
-
-        //left_motor_set_speed(leftMotorSpeed);
-        //right_motor_set_speed(rightMotorSpeed);
-
+        float freeBearing[2]={0,0};
+        //chprintf((BaseSequentialStream *) &SD3,"State :%u\n\r",getScanStatus());
+        if(getScanStatus()==FINISHEDSCANNING)
+        {
+        	getFreeBearing(freeBearing,2);
+        	chprintf((BaseSequentialStream *) &SD3,"LOW HIGH: %f, HIGH LOW: %f\n\r",freeBearing[0],freeBearing[1]);
+        	setDesiredBearing(freeBearing[0]);
+        }
+        chThdSleep(MS2ST(100));
     }
 }
 

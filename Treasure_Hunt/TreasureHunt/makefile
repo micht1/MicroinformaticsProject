@@ -14,6 +14,7 @@ CSRC += ./main.c \
 		./communications.c \
 		./fft.c \
 		./driveMotors.c \
+		./freeDirectionDetection.c\
 		
 
 #Header folders to include
