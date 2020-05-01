@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "leds.h"
 #include "ch.h"
 #include "hal.h"
 #include "memory_protection.h"
@@ -95,7 +96,7 @@ int main(void)
         //wait_send_to_computer();
 #ifdef DOUBLE_BUFFERING
         //we copy the buffer to avoid conflicts
-        arm_copy_f32(get_audio_buffer_ptr(FRONT_OUTPUT), send_tab, FFT_SIZE);
+
         //SendFloatToComputer((BaseSequentialStream *) &SD3, send_tab, FFT_SIZE);
 #else
         //SendFloatToComputer((BaseSequentialStream *) &SD3, get_audio_buffer_ptr(LEFT_OUTPUT), FFT_SIZE);
@@ -138,41 +139,79 @@ int main(void)
         	}
 
 
-            SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
+            //SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
 
         }
 #endif  /* SEND_FROM_MIC */
-        chprintf((BaseSequentialStream *)&SDU1,"Frequency: %f\n\r",getToneFrequency());
-        float toneFrequency=getToneFrequency();
+       // chprintf((BaseSequentialStream *)&SDU1,"Frequency: %f\n\r",getToneFrequency());
         int leftMotorSpeed=0;
         int rightMotorSpeed=0;
-        if(toneFrequency>300 && toneFrequency<600)
+        uint32_t volume=getSoundLevel();
+
+        //leftMotorSpeed=100;
+        //rightMotorSpeed=-100;
+        float soundAngle=getRelativeAngle();
+        uint8_t patternToUse=0;
+        if(soundAngle<M_PI/4 && soundAngle>-M_PI/4  )
         {
-        	leftMotorSpeed=500;
-        	rightMotorSpeed=500;
+        	set_led(LED1,1);
+			set_led(LED3,0);
+			set_led(LED5,0);
+			set_led(LED7,0);
         }
-        else if(toneFrequency>600 && toneFrequency<800)
+        else if(soundAngle>M_PI/4 && soundAngle<3*M_PI/4)
         {
-        	leftMotorSpeed=-500;
-        	rightMotorSpeed=-500;
+        	set_led(LED1,0);
+			set_led(LED3,0);
+			set_led(LED5,0);
+			set_led(LED7,1);
         }
-        else if(toneFrequency>800 && toneFrequency<1000)
+        else if(soundAngle>3*M_PI/4)
         {
-        	leftMotorSpeed=500;
-        	rightMotorSpeed=-500;
+        	set_led(LED1,0);
+			set_led(LED3,0);
+			set_led(LED5,1);
+			set_led(LED7,0);
         }
-        else if(toneFrequency>1000 && toneFrequency<1200)
+        else if(soundAngle<-M_PI/4 && soundAngle>-3* M_PI/4)
         {
-        	leftMotorSpeed=-500;
-        	rightMotorSpeed=500;
+        	set_led(LED1,0);
+			set_led(LED3,1);
+			set_led(LED5,0);
+			set_led(LED7,0);
+        }
+        else if(soundAngle<-3*M_PI/4)
+        {
+        	set_led(LED1,0);
+			set_led(LED3,0);
+			set_led(LED5,1);
+			set_led(LED7,0);
         }
         else
         {
-        	leftMotorSpeed=0;
-        	rightMotorSpeed=0;
+        	if(isnanf(soundAngle))
+        	{
+        		set_rgb_led(LED2,200,200,0);
+        		set_rgb_led(LED7,200,200,0);
+        	}
+        	set_led(LED1,1);
+			set_led(LED3,0);
+			set_led(LED5,1);
+			set_led(LED7,0);
         }
-        //left_motor_set_speed(leftMotorSpeed);
-        //right_motor_set_speed(rightMotorSpeed);
+
+
+
+        if(volume>10000)
+        {
+			left_motor_set_speed(leftMotorSpeed);
+			right_motor_set_speed(rightMotorSpeed);
+        }
+        else
+        {
+        	left_motor_set_speed(0);
+			right_motor_set_speed(0);
+        }
 
     }
 }
