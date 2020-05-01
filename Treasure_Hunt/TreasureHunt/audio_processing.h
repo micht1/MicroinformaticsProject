@@ -31,22 +31,8 @@ typedef enum
 	FRONTBACKN,					//Chose solution for 0>beta>-180
 	SOLIUTIONERROR=500					//error. random number
 }correctSolution_t;
-//static const uint16_t fftBin=(uint16_t)2*(FREQUENCYTOFIND/FREQUENCYCOEFFIZIENT);
-#define MINSOUNDLEVEL 1500
-#define Frequency_Goal 2000
 
-typedef enum {
-	//2 times FFT_SIZE because these arrays contain complex numbers (real + imaginary)
-	LEFT_CMPLX_INPUT = 0,
-	RIGHT_CMPLX_INPUT,
-	FRONT_CMPLX_INPUT,
-	BACK_CMPLX_INPUT,
-	//Arrays containing the computed magnitude of the complex numbers
-	LEFT_OUTPUT,
-	RIGHT_OUTPUT,
-	FRONT_OUTPUT,
-	BACK_OUTPUT
-} BUFFER_NAME_t;
+
 
 typedef struct{
 	float realPart;
@@ -60,19 +46,11 @@ void processAudioData(int16_t *data, uint16_t num_samples);
 */
 void wait_send_to_computer(void);
 
-/*
-*	Returns the pointer to the BUFFER_NAME_t buffer asked
-*/
-float* get_audio_buffer_ptr(BUFFER_NAME_t name);
 
 float calculateMaxFrequency(float *frequencyBuffer,uint16_t bufferSize);
 float getToneFrequency(void);
-<<<<<<< HEAD
-float getAngle(void);
 uint32_t getSoundLevel(void);
-=======
 float getRelativeAngle(void);
 
->>>>>>> FannySoundDirectionDetection
 
 #endif /* AUDIO_PROCESSING_H */

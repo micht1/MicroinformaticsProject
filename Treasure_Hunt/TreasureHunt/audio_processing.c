@@ -26,41 +26,43 @@ static float micRight_output[FFT_SIZE];
 static float micFront_output[FFT_SIZE];
 static float micBack_output[FFT_SIZE];
 
-static float toneFrequency=0;
 static float relativeAngle=0;
 int Frequency_Position;
 
-static float anglePhase=0;
+//calculation of the frequencyposition
+static const int freqBin=(unsigned int)(FREQUENCYTOFIND/FREQUENCYCOEFFIZIENT);
 
 
 
-const unsigned int freqBin=(unsigned int)(FREQUENCYTOFIND/FREQUENCYCOEFFIZIENT);
 void microPhonePhaseShift(complexNumber_t *complexFFTNumber1,complexNumber_t *complexFFTNumber2,float *phaseShift, uint8_t phaseArraySize)
 {
 	static float oldPhase[NBOFPHASES];
-	for(uint8_t phaseCounter=0; phaseCounter<NBOFPHASES;phaseCounter++)
+	if(phaseArraySize==NBOFPHASES)
 	{
-
-		float phase1=atan2f(complexFFTNumber1[phaseCounter].imaginaryPart,complexFFTNumber1[phaseCounter].realPart);
-		float phase2=atan2f((complexFFTNumber2[phaseCounter].imaginaryPart),(complexFFTNumber2[phaseCounter].realPart));
-
-		if(fabs(phase1-phase2)<MAXPHASEANGLE)
+		for(uint8_t phaseCounter=0; phaseCounter<NBOFPHASES;phaseCounter++)
 		{
-			phaseShift[phaseCounter]=(phase1-phase2);
 
-			if(fabs(phaseShift[phaseCounter]-oldPhase[phaseCounter])<MAXPHASEANGLE)
+			float phase1=atan2f(complexFFTNumber1[phaseCounter].imaginaryPart,complexFFTNumber1[phaseCounter].realPart);
+			float phase2=atan2f((complexFFTNumber2[phaseCounter].imaginaryPart),(complexFFTNumber2[phaseCounter].realPart));
+
+			if(fabs(phase1-phase2)<MAXPHASEANGLE)
 			{
-				oldPhase[phaseCounter]=phaseShift[phaseCounter];
+				phaseShift[phaseCounter]=(phase1-phase2);
+
+				if(fabs(phaseShift[phaseCounter]-oldPhase[phaseCounter])<MAXPHASEANGLE)
+				{
+					oldPhase[phaseCounter]=phaseShift[phaseCounter];
+				}
+				else
+				{
+					phaseShift[phaseCounter]=oldPhase[phaseCounter];
+				}
 			}
 			else
 			{
 				phaseShift[phaseCounter]=oldPhase[phaseCounter];
+				//chprintf((BaseSequentialStream *)&SD3,"Skipped!\n\r");
 			}
-		}
-		else
-		{
-			phaseShift[phaseCounter]=oldPhase[phaseCounter];
-			//chprintf((BaseSequentialStream *)&SD3,"Skipped!\n\r");
 		}
 	}
 }
@@ -91,7 +93,6 @@ float calculateDirectionOfSound(float *phaseShift,uint8_t phaseArraySize,uint16_
 			{
 				angle=-angleFB1;
 			}
-			set_body_led(1);
 		}
 		else if(isnanf(angleFB1) && !isnanf(angleLR1))
 		{
@@ -103,7 +104,6 @@ float calculateDirectionOfSound(float *phaseShift,uint8_t phaseArraySize,uint16_
 			{
 				angle=angleLR2;
 			}
-			set_body_led(1);
 		}
 		else if(isnanf(angleFB1) && isnanf(angleLR1))
 		{
@@ -156,8 +156,6 @@ float calculateDirectionOfSound(float *phaseShift,uint8_t phaseArraySize,uint16_
 				angle =	angleLR2*leftRightWeight-angleFB1*frontBackWeight;
 				break;
 			}
-
-			set_body_led(0);
 			chprintf((BaseSequentialStream *)&SD3,"smallestDiff : %u\n\r",smallestDiff);
 		}
 		// functions used to debug
@@ -240,24 +238,15 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 
 
 		bufferCounter=0;
-==
-		Frequency_Position=2*(Frequency_Goal/FREQUENCYCOEFFIZIENT);
-		//Filtering of the unwanted frequency and putting the good one in separated variables
-		//calculation of the position
-		micLeftPhase.realPart=micLeft_cmplx_input[Frequency_Position];
-		micLeftPhase.imaginaryPart=micLeft_cmplx_input[Frequency_Position+1];
-		micRightPhase.realPart=micRight_cmplx_input[Frequency_Position];
-		micRightPhase.imaginaryPart=micRight_cmplx_input[Frequency_Position+1];
-		micFrontPhase.realPart=micFront_cmplx_input[Frequency_Position];
-		micFrontPhase.imaginaryPart=micFront_cmplx_input[Frequency_Position+1];
-		micBackPhase.realPart=micBack_cmplx_input[Frequency_Position];
-		micBackPhase.imaginaryPart=micBack_cmplx_input[Frequency_Position+1];
-        ==
+
+
+
 		complexNumber_t micFFTComplexNumbers1[NBOFPHASES]={0};
 		complexNumber_t micFFTComplexNumbers2[NBOFPHASES]={0};
 
 		if(micRight_output[freqBin]>MINSOUNDLEVEL && micLeft_output[freqBin]>MINSOUNDLEVEL && micFront_output[freqBin]>MINSOUNDLEVEL && micBack_output[freqBin]>MINSOUNDLEVEL)
 		{
+			//Filtering of the unwanted frequency and putting the good one in separated variables
 
 			micFFTComplexNumbers1[0].realPart=micLeft_cmplx_input[2*freqBin]; 	micFFTComplexNumbers1[0].imaginaryPart=micLeft_cmplx_input[(2*freqBin)+1];
 			micFFTComplexNumbers1[1].realPart=micFront_cmplx_input[2*freqBin];	micFFTComplexNumbers1[1].imaginaryPart=micFront_cmplx_input[(2*freqBin)+1];
@@ -277,9 +266,8 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 				phaseShift[phaseCounter]=FILTERCOEFFIZIENT*phaseShiftRaw[phaseCounter]+(1-FILTERCOEFFIZIENT)*phaseShift[phaseCounter];
 			}
 
-			float anglebla = calculateDirectionOfSound(phaseShift,NBOFPHASES,FREQUENCYTOFIND);
-			anglePhase = anglebla;
-			float angleCalculated= (anglebla)/M_PI*180;
+			relativeAngle = calculateDirectionOfSound(phaseShift,NBOFPHASES,FREQUENCYTOFIND);
+			float angleCalculated= (relativeAngle)/M_PI*180;
 
 			chprintf((BaseSequentialStream *)&SD3,"Angle %f\n\r",angleCalculated);
 
@@ -304,39 +292,7 @@ void wait_send_to_computer(void){
 	chBSemWait(&sendToComputer_sem);
 }
 
-float* get_audio_buffer_ptr(BUFFER_NAME_t name){
-	if(name == LEFT_CMPLX_INPUT){
-		return micLeft_cmplx_input;
-	}
-	else if (name == RIGHT_CMPLX_INPUT){
-		return micRight_cmplx_input;
-	}
-	else if (name == FRONT_CMPLX_INPUT){
-		return micFront_cmplx_input;
-	}
-	else if (name == BACK_CMPLX_INPUT){
-		return micBack_cmplx_input;
-	}
-	else if (name == LEFT_OUTPUT){
-		return micLeft_output;
-	}
-	else if (name == RIGHT_OUTPUT){
-		return micRight_output;
-	}
-	else if (name == FRONT_OUTPUT){
-		return micFront_output;
-	}
-	else if (name == BACK_OUTPUT){
-		return micBack_output;
-	}
-	else{
-		return NULL;
-	}
-}
-float getAngle(void)
-{
-	return anglePhase;
-}
+
 
 uint32_t getSoundLevel(void)
 {
