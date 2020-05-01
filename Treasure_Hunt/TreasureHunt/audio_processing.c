@@ -11,6 +11,7 @@
 #include <fft.h>
 #include <arm_math.h>
 
+
 //semaphore
 static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
 
@@ -24,6 +25,10 @@ static float micLeft_output[FFT_SIZE];
 static float micRight_output[FFT_SIZE];
 static float micFront_output[FFT_SIZE];
 static float micBack_output[FFT_SIZE];
+
+static float toneFrequency=0;
+static float relativeAngle=0;
+int Frequency_Position;
 
 static float anglePhase=0;
 
@@ -235,7 +240,19 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 
 
 		bufferCounter=0;
-
+==
+		Frequency_Position=2*(Frequency_Goal/FREQUENCYCOEFFIZIENT);
+		//Filtering of the unwanted frequency and putting the good one in separated variables
+		//calculation of the position
+		micLeftPhase.realPart=micLeft_cmplx_input[Frequency_Position];
+		micLeftPhase.imaginaryPart=micLeft_cmplx_input[Frequency_Position+1];
+		micRightPhase.realPart=micRight_cmplx_input[Frequency_Position];
+		micRightPhase.imaginaryPart=micRight_cmplx_input[Frequency_Position+1];
+		micFrontPhase.realPart=micFront_cmplx_input[Frequency_Position];
+		micFrontPhase.imaginaryPart=micFront_cmplx_input[Frequency_Position+1];
+		micBackPhase.realPart=micBack_cmplx_input[Frequency_Position];
+		micBackPhase.imaginaryPart=micBack_cmplx_input[Frequency_Position+1];
+        ==
 		complexNumber_t micFFTComplexNumbers1[NBOFPHASES]={0};
 		complexNumber_t micFFTComplexNumbers2[NBOFPHASES]={0};
 
@@ -344,4 +361,11 @@ float calculateMaxFrequency(float *frequencyBuffer,uint16_t bufferSize)
 	chprintf((BaseSequentialStream *)&SD3,"F: %f,l %f\n\r",maxFrequency[1],maxFrequency[0]);
 	return maxFrequency[1];
 }
+
+float getRelativeAngle(void)
+{
+	return relativeAngle;
+}
+
+
 

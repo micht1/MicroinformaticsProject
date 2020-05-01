@@ -25,13 +25,15 @@
 //#define NBOFAVERGINGPOINTS 12
 typedef enum
 {
-	LEFTRIGHT1=0,					//chose Solution for -90° <alpha< 90
+	LEFTRIGHT1=0,					//chose Solution for -90ï¿½ <alpha< 90
 	LEFTRIGHT2,					// chose Solution for alpha =[180...90] or alpha = [-180 ... -90]
-	FRONTBACKP,					//chose solution for 0<beta<180°
+	FRONTBACKP,					//chose solution for 0<beta<180ï¿½
 	FRONTBACKN,					//Chose solution for 0>beta>-180
 	SOLIUTIONERROR=500					//error. random number
 }correctSolution_t;
 //static const uint16_t fftBin=(uint16_t)2*(FREQUENCYTOFIND/FREQUENCYCOEFFIZIENT);
+#define MINSOUNDLEVEL 1500
+#define Frequency_Goal 2000
 
 typedef enum {
 	//2 times FFT_SIZE because these arrays contain complex numbers (real + imaginary)
@@ -65,7 +67,12 @@ float* get_audio_buffer_ptr(BUFFER_NAME_t name);
 
 float calculateMaxFrequency(float *frequencyBuffer,uint16_t bufferSize);
 float getToneFrequency(void);
+<<<<<<< HEAD
 float getAngle(void);
 uint32_t getSoundLevel(void);
+=======
+float getRelativeAngle(void);
+
+>>>>>>> FannySoundDirectionDetection
 
 #endif /* AUDIO_PROCESSING_H */
