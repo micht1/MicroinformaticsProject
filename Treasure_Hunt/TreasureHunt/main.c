@@ -16,9 +16,10 @@
 #include <communications.h>
 #include <arm_math.h>
 #include <audio_processing.h>
+#include <IRSensorReading.h>
 
 //uncomment to send the FFTs results from the real microphones
-#define SEND_FROM_MIC
+//#define SEND_FROM_MIC
 
 //uncomment to use double buffering to send the FFT to the computer
 #define DOUBLE_BUFFERING
@@ -50,6 +51,10 @@ static void timer12_start(void){
     //let the timer count to max value
     gptStartContinuous(&GPTD12, 0xFFFF);
 }
+
+messagebus_t bus;
+MUTEX_DECL(bus_lock);
+CONDVAR_DECL(bus_condvar);
 //static complex_float unoptimizedBuffer[FFT_SIZE];
 int main(void)
 {
@@ -57,6 +62,9 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
+
+
+    messagebus_init(&bus,&bus_lock,&bus_condvar);
 
     //starts the serial communication
     serial_start();
@@ -66,7 +74,7 @@ int main(void)
     timer12_start();
     //inits the motors
     motors_init();
-
+    IRProcessingStart();
     //send_tab is used to save the state of the buffer to send (double buffering)
     //to avoid modifications of the buffer while sending it
     static float send_tab[FFT_SIZE];
@@ -95,14 +103,14 @@ int main(void)
         float* bufferCmplxInput = get_audio_buffer_ptr(LEFT_CMPLX_INPUT);
         float* bufferOutput = get_audio_buffer_ptr(LEFT_OUTPUT);
 
-        uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
+       // uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
         /*for(uint16_t bufferCount=0;bufferCount<FFT_SIZE;bufferCount++)
         {
         	unoptimizedBuffer[bufferCount].real = bufferCmplxInput[bufferCount*2];
         	unoptimizedBuffer[bufferCount].imag=0;
         }*/
 
-        if(size == FFT_SIZE){
+        //if(size == FFT_SIZE){
 
 
         	//doFFT_c(FFT_SIZE,unoptimizedBuffer);
@@ -121,11 +129,17 @@ int main(void)
 			doFFT_optimized(FFT_SIZE, bufferCmplxInput);
             arm_cmplx_mag_f32(bufferCmplxInput, bufferOutput, FFT_SIZE);
 
-            SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
+            //SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
 
-        }
+        //}
 #endif  /* SEND_FROM_MIC */
-        chprintf((BaseSequentialStream *)&SDU1,"Frequency: %f\n\r",getToneFrequency());
+       ///chprintf((BaseSequentialStream *)&SDU1,"Frequency: %f\n\r",getToneFrequency());
+        if(isObstaclePresent())
+        {
+        	ignoreObstacle(true);
+        	chprintf((BaseSequentialStream *)&SD3,"Recived: Is there an obstacle %s, Value: %d\n\r",isObstaclePresent() ? "true" : "false",getObstacleDirection());
+        }
+
         float toneFrequency=getToneFrequency();
         int leftMotorSpeed=0;
         int rightMotorSpeed=0;
