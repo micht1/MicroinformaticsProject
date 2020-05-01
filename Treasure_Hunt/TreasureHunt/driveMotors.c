@@ -17,10 +17,10 @@
 #define KP 10.0f
 #define KI 0.0f
 #define MAXERROR 2.0f
-#define MAXWHEELSPEED 500
+
 
 #define PI M_PI
-#define MINSPEED 2
+#define MINSPEED 5
 #define COUNTSPERTURN 1000
 
 #define FILTERCOEFFICIENT 0.3f
@@ -33,7 +33,7 @@ static float desiredBearingPhi=0;
 static float bearingPhi=0;
 static int16_t desiredSpeed=0;
 static bool stop=false;
-
+static int16_t maxWheelSpeed=MAXWHEELSPEED;
 
 static THD_WORKING_AREA(driveMotor_thd_was, 256);
 static THD_FUNCTION(driveMotor_thd, arg)
@@ -55,6 +55,7 @@ static THD_FUNCTION(driveMotor_thd, arg)
     	time=chVTGetSystemTime();
     	int16_t forwardSpeed=0;							//speed in cm/s
     	float rotationalSpeed=0;
+
     	if(fabs(desiredBearingPhi-bearingPhi)<0.05f && stop==false)
     	{
     		forwardSpeed=desiredSpeed;
@@ -81,26 +82,26 @@ static THD_FUNCTION(driveMotor_thd, arg)
     	{
     		desiredSpeedLeft=0;
     	}
-    	else if(desiredSpeedLeft>MAXWHEELSPEED)
+    	else if(desiredSpeedLeft>maxWheelSpeed)
     	{
-    		desiredSpeedLeft=MAXWHEELSPEED;
+    		desiredSpeedLeft=maxWheelSpeed;
     	}
-    	else if(desiredSpeedLeft<-MAXWHEELSPEED)
+    	else if(desiredSpeedLeft<-maxWheelSpeed)
     	{
-    		desiredSpeedLeft=-MAXWHEELSPEED;
+    		desiredSpeedLeft=-maxWheelSpeed;
     	}
 
     	if(fabs(desiredSpeedRight)<MINSPEED)				//trying to prevent overheating
 		{
     		desiredSpeedRight=0;
 		}
-    	else if(desiredSpeedRight>MAXWHEELSPEED)
+    	else if(desiredSpeedRight>maxWheelSpeed)
 		{
-			desiredSpeedRight=MAXWHEELSPEED;
+			desiredSpeedRight=maxWheelSpeed;
 		}
-		else if(desiredSpeedRight<-MAXWHEELSPEED)
+		else if(desiredSpeedRight<-maxWheelSpeed)
 		{
-			desiredSpeedRight=-MAXWHEELSPEED;
+			desiredSpeedRight=-maxWheelSpeed;
 		}
     	left_motor_set_speed(desiredSpeedLeft);
     	right_motor_set_speed(desiredSpeedRight);
@@ -162,33 +163,45 @@ void startMotors(void)
 	motors_init();
 	chThdCreateStatic(driveMotor_thd_was, sizeof(driveMotor_thd_was), HIGHPRIO, driveMotor_thd, NULL);
 }
-
 void isAllowedToDrive(bool doDrive)
 {
 	stop=!doDrive;
 }
-
-
-
 void setDesiredBearing(float desiredBearing)
 {
-	desiredBearingPhi=desiredBearing;
+	if(desiredBearing>MAXBEARING)
+	{
+		desiredBearingPhi=MAXBEARING;
+	}
+	else if(desiredBearing<-MAXBEARING)
+	{
+		desiredBearingPhi=-MAXBEARING;
+	}
+	else
+	{
+		desiredBearingPhi=desiredBearing;
+	}
 }
-
-
-
 float getXPosition(void)
 {
 	return xPosition;
 }
-
 float getYPosition(void)
 {
 	return yPosition;
 }
-
-
 float getBearing(void)
 {
 	return bearingPhi;
+}
+void limitWheelSpeed(int16_t speedLimit)
+{
+	if(speedLimit<MAXWHEELSPEED)
+	{
+		maxWheelSpeed=speedLimit;
+	}
+	else
+	{
+		maxWheelSpeed=MAXWHEELSPEED;
+	}
 }

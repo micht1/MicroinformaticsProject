@@ -12,6 +12,7 @@
 #include <motors.h>
 #include "driveMotors.h"
 #include <audio/microphone.h>
+#include "freeDirectionDetection.h"
 
 #include <audio_processing.h>
 #include <fft.h>
@@ -75,13 +76,13 @@ int main(void)
     //starts timer 12
     timer12_start();
     //inits the motors
-    //motors_init();
+    startDirectionDetectionThread();
     startMotors();
     IRProcessingStart();
     //send_tab is used to save the state of the buffer to send (double buffering)
     //to avoid modifications of the buffer while sending it
     static float send_tab[FFT_SIZE];
-    int state=0;
+
 
 #ifdef SEND_FROM_MIC
     //starts the microphones processing thread.
@@ -117,102 +118,21 @@ int main(void)
 
 #endif  /* SEND_FROM_MIC */
 
-        chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
-        switch(state)
+       // chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
+        setScanningRange(-M_PI/4, 3*M_PI/4);
+        if(getScanStatus()==IDLE)
         {
-        case 0:
-        	setDesiredBearing(0);
-        	setDesiredSpeed(5);
-        	chThdSleepSeconds(1);
-
-        	if(getXPosition()>=10.0f)
-        	{
-        		//set_led(7,1);
-        		state=1;
-        	}
-        	break;
-        case 1:
-        	setDesiredBearing(-PI/2);
-        	if(getYPosition()<=-10.0f)
-        	{
-        		state=5;
-        	}
-
-
-            //SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
-
+        		doScanning(true);
         }
-#endif  /* SEND_FROM_MIC */
-       // chprintf((BaseSequentialStream *)&SDU1,"Frequency: %f\n\r",getToneFrequency());
-        int leftMotorSpeed=0;
-        int rightMotorSpeed=0;
-        uint32_t volume=getSoundLevel();
-
-        //leftMotorSpeed=100;
-        //rightMotorSpeed=-100;
-        float soundAngle=getRelativeAngle();
-        uint8_t patternToUse=0;
-        if(soundAngle<M_PI/4 && soundAngle>-M_PI/4  )
+        float freeBearing[2]={0,0};
+        //chprintf((BaseSequentialStream *) &SD3,"State :%u\n\r",getScanStatus());
+        if(getScanStatus()==FINISHEDSCANNING)
         {
-        	set_led(LED1,1);
-			set_led(LED3,0);
-			set_led(LED5,0);
-			set_led(LED7,0);
+        	getFreeBearing(freeBearing,2);
+        	chprintf((BaseSequentialStream *) &SD3,"LOW HIGH: %f, HIGH LOW: %f\n\r",freeBearing[0],freeBearing[1]);
+        	setDesiredBearing(freeBearing[0]);
         }
-        else if(soundAngle>M_PI/4 && soundAngle<3*M_PI/4)
-        {
-        	set_led(LED1,0);
-			set_led(LED3,0);
-			set_led(LED5,0);
-			set_led(LED7,1);
-        }
-        else if(soundAngle>3*M_PI/4)
-        {
-        	set_led(LED1,0);
-			set_led(LED3,0);
-			set_led(LED5,1);
-			set_led(LED7,0);
-        }
-        else if(soundAngle<-M_PI/4 && soundAngle>-3* M_PI/4)
-        {
-        	set_led(LED1,0);
-			set_led(LED3,1);
-			set_led(LED5,0);
-			set_led(LED7,0);
-        }
-        else if(soundAngle<-3*M_PI/4)
-        {
-        	set_led(LED1,0);
-			set_led(LED3,0);
-			set_led(LED5,1);
-			set_led(LED7,0);
-        }
-        else
-        {
-        	if(isnanf(soundAngle))
-        	{
-        		set_rgb_led(LED2,200,200,0);
-        		set_rgb_led(LED7,200,200,0);
-        	}
-        	set_led(LED1,1);
-			set_led(LED3,0);
-			set_led(LED5,1);
-			set_led(LED7,0);
-        }
-
-
-
-        if(volume>10000)
-        {
-			left_motor_set_speed(leftMotorSpeed);
-			right_motor_set_speed(rightMotorSpeed);
-        }
-        else
-        {
-        	left_motor_set_speed(0);
-			right_motor_set_speed(0);
-        }
-
+        chThdSleep(MS2ST(100));
     }
 }
 

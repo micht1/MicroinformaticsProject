@@ -15,6 +15,7 @@ CSRC += ./main.c \
 		./fft.c \
 		./IRSensorReading.c \
 		./driveMotors.c \
+		./freeDirectionDetection.c\
 		
 
 #Header folders to include
