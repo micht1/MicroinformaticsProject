@@ -45,7 +45,7 @@ static THD_FUNCTION(freeDirection_thd, arg)
 			}
 			break;
 		case ROTATINGTOSTART:
-			if(fabs(getCurrentBearing()-startingBearing)<STARTINGTOLERANCE && doScan==true)
+			if(fabs(getBearing()-startingBearing)<STARTINGTOLERANCE && doScan==true)
 			{
 				scanStatus=SCANNINGROTATION;
 				limitWheelSpeed(SCANWHEELSPEED);
@@ -61,19 +61,19 @@ static THD_FUNCTION(freeDirection_thd, arg)
 			if((oldDistance -currentDistance)>minDelta && oldDistance!=0)
 			{
 				minDelta=oldDistance - currentDistance;
-				minBearing=getCurrentBearing();
+				minBearing=getBearing();
 			}
 			if((oldDistance -currentDistance)<maxDelta && oldDistance!=0)
 			{
 				maxDelta=oldDistance - currentDistance;
-				maxBearing=getCurrentBearing();
+				maxBearing=getBearing();
 			}
 			oldDistance=currentDistance;
 			chprintf((BaseSequentialStream *) &SD3,"Delta: %d, current %u, ol %u\n\r",oldDistance-currentDistance,currentDistance,oldDistance);
-			if((fabs(getCurrentBearing()-endingBearing)<ENDINGTOLERANCE))
+			if((fabs(getBearing()-endingBearing)<ENDINGTOLERANCE))
 			{
 				scanStatus=FINISHEDSCANNING;
-				setDesiredBearing(getCurrentBearing());
+				setDesiredBearing(getBearing());
 				bearingFC=maxBearing;
 				bearingCF=minBearing;
 				limitWheelSpeed(MAXWHEELSPEED);

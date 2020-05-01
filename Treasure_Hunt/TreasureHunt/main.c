@@ -79,9 +79,6 @@ int main(void)
     startDirectionDetectionThread();
     startMotors();
     IRProcessingStart();
-    //send_tab is used to save the state of the buffer to send (double buffering)
-    //to avoid modifications of the buffer while sending it
-    static float send_tab[FFT_SIZE];
 
 
 #ifdef SEND_FROM_MIC
@@ -92,47 +89,25 @@ int main(void)
 
     /* Infinite loop. */
     while (1) {
-#ifdef SEND_FROM_MIC
-        //waits until a result must be sent to the computer
-        //wait_send_to_computer();
-#ifdef DOUBLE_BUFFERING
-        //we copy the buffer to avoid conflicts
 
-        //SendFloatToComputer((BaseSequentialStream *) &SD3, send_tab, FFT_SIZE);
-#else
-        //SendFloatToComputer((BaseSequentialStream *) &SD3, get_audio_buffer_ptr(LEFT_OUTPUT), FFT_SIZE);
-#endif  /* DOUBLE_BUFFERING */
-#else
 
-        float* bufferCmplxInput = get_audio_buffer_ptr(LEFT_CMPLX_INPUT);
-        float* bufferOutput = get_audio_buffer_ptr(LEFT_OUTPUT);
 
-        uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
-        /*for(uint16_t bufferCount=0;bufferCount<FFT_SIZE;bufferCount++)
-        {
-        	unoptimizedBuffer[bufferCount].real = bufferCmplxInput[bufferCount*2];
-        	unoptimizedBuffer[bufferCount].imag=0;
-        }*/
 
-        if(size == FFT_SIZE){
-
-#endif  /* SEND_FROM_MIC */
-
-       // chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
-        setScanningRange(-M_PI/4, 3*M_PI/4);
-        if(getScanStatus()==IDLE)
-        {
-        		doScanning(true);
-        }
-        float freeBearing[2]={0,0};
-        //chprintf((BaseSequentialStream *) &SD3,"State :%u\n\r",getScanStatus());
-        if(getScanStatus()==FINISHEDSCANNING)
-        {
-        	getFreeBearing(freeBearing,2);
-        	chprintf((BaseSequentialStream *) &SD3,"LOW HIGH: %f, HIGH LOW: %f\n\r",freeBearing[0],freeBearing[1]);
-        	setDesiredBearing(freeBearing[0]);
-        }
-        chThdSleep(MS2ST(100));
+	   // chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
+		setScanningRange(-M_PI/4, 3*M_PI/4);
+		if(getScanStatus()==IDLE)
+		{
+				doScanning(true);
+		}
+		float freeBearing[2]={0,0};
+		//chprintf((BaseSequentialStream *) &SD3,"State :%u\n\r",getScanStatus());
+		if(getScanStatus()==FINISHEDSCANNING)
+		{
+			getFreeBearing(freeBearing,2);
+			chprintf((BaseSequentialStream *) &SD3,"LOW HIGH: %f, HIGH LOW: %f\n\r",freeBearing[0],freeBearing[1]);
+			setDesiredBearing(freeBearing[0]);
+		}
+		chThdSleep(MS2ST(100));
     }
 }
 

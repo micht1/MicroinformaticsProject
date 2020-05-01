@@ -57,14 +57,7 @@ static THD_FUNCTION(IRSensorProcessing, arg) {
     	 }
 
     	 processingValues.directionOfObstacle= processingValues.directionOfObstacle/nbOfTriggeredSensors;
-    	 if(processingValues.obstaclePresent && processingValues.ignoringObstacle==false)
-    	 {
-    		 set_front_led(1);
-    	 }
-    	 else
-    	 {
-    		 set_front_led(0);
-    	 }
+
 
     	 //chprintf((BaseSequentialStream *)&SD3,"Published present: %s, Value: %d\n\r",processingValues.obstaclePresent ? "true" : "false",processingValues.directionOfObstacle);
 
