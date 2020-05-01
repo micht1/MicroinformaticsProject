@@ -14,6 +14,8 @@ CSRC += ./main.c \
 		./communications.c \
 		./fft.c \
 		./IRSensorReading.c \
+		./driveMotors.c \
+		
 
 #Header folders to include
 INCDIR += 
