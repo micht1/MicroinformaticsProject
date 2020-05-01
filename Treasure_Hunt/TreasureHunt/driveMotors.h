@@ -3,13 +3,18 @@
 
 
 float wrapAngle(float angle);
-void setDesiredBearing(float desiredBearing);
 void setDesiredSpeed(int16_t speed);
-float getCurrentBearing(void);
 void startMotors(void);
+void isAllowedToDrive(bool doDrive);
+void setDesiredBearing(float desiredBearing);
+
+
 float getXPosition(void);
 float getYPosition(void);
-void isAllowedToDrive(bool doDrive);
+
+float getBearing(void);
+
+
 
 
 #endif /* DRIVEMOTORS_H */

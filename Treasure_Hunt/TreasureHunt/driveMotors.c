@@ -157,29 +157,38 @@ void setDesiredSpeed(int16_t speed)
 {
 	desiredSpeed=speed;
 }
-void setDesiredBearing(float desiredBearing)
-{
-	desiredBearingPhi=desiredBearing;
-}
-float getCurrentBearing(void)
-{
-	return bearingPhi;
-}
 void startMotors(void)
 {
 	motors_init();
 	chThdCreateStatic(driveMotor_thd_was, sizeof(driveMotor_thd_was), HIGHPRIO, driveMotor_thd, NULL);
 }
+
+void isAllowedToDrive(bool doDrive)
+{
+	stop=!doDrive;
+}
+
+
+
+void setDesiredBearing(float desiredBearing)
+{
+	desiredBearingPhi=desiredBearing;
+}
+
+
+
 float getXPosition(void)
 {
 	return xPosition;
 }
+
 float getYPosition(void)
 {
 	return yPosition;
 }
 
-void isAllowedToDrive(bool doDrive)
+
+float getBearing(void)
 {
-	stop=!doDrive;
+	return bearingPhi;
 }
