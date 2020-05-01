@@ -9,6 +9,7 @@
 #include <main.h>
 #include <chprintf.h>
 #include <motors.h>
+#include "driveMotors.h"
 #include <audio/microphone.h>
 
 #include <audio_processing.h>
@@ -18,7 +19,7 @@
 #include <audio_processing.h>
 
 //uncomment to send the FFTs results from the real microphones
-#define SEND_FROM_MIC
+//#define SEND_FROM_MIC
 
 //uncomment to use double buffering to send the FFT to the computer
 #define DOUBLE_BUFFERING
@@ -65,12 +66,12 @@ int main(void)
     //starts timer 12
     timer12_start();
     //inits the motors
-    motors_init();
-
+    //motors_init();
+    startMotors();
     //send_tab is used to save the state of the buffer to send (double buffering)
     //to avoid modifications of the buffer while sending it
     static float send_tab[FFT_SIZE];
-
+    int state=0;
 
 #ifdef SEND_FROM_MIC
     //starts the microphones processing thread.
@@ -82,78 +83,62 @@ int main(void)
     while (1) {
 #ifdef SEND_FROM_MIC
         //waits until a result must be sent to the computer
-        wait_send_to_computer();
+        //wait_send_to_computer();
 #ifdef DOUBLE_BUFFERING
         //we copy the buffer to avoid conflicts
         arm_copy_f32(get_audio_buffer_ptr(FRONT_OUTPUT), send_tab, FFT_SIZE);
-        SendFloatToComputer((BaseSequentialStream *) &SD3, send_tab, FFT_SIZE);
+        //SendFloatToComputer((BaseSequentialStream *) &SD3, send_tab, FFT_SIZE);
 #else
-        SendFloatToComputer((BaseSequentialStream *) &SD3, get_audio_buffer_ptr(LEFT_OUTPUT), FFT_SIZE);
+        //SendFloatToComputer((BaseSequentialStream *) &SD3, get_audio_buffer_ptr(LEFT_OUTPUT), FFT_SIZE);
 #endif  /* DOUBLE_BUFFERING */
 #else
 
         float* bufferCmplxInput = get_audio_buffer_ptr(LEFT_CMPLX_INPUT);
         float* bufferOutput = get_audio_buffer_ptr(LEFT_OUTPUT);
 
-        uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
+        //uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
         /*for(uint16_t bufferCount=0;bufferCount<FFT_SIZE;bufferCount++)
         {
         	unoptimizedBuffer[bufferCount].real = bufferCmplxInput[bufferCount*2];
         	unoptimizedBuffer[bufferCount].imag=0;
         }*/
 
-        if(size == FFT_SIZE){
 
-
-        	//doFFT_c(FFT_SIZE,unoptimizedBuffer);
-        	/*for(uint16_t bufferCount=0;bufferCount<FFT_SIZE*2;bufferCount++)
-        	{
-        		if(bufferCount%2==0)
-        		{
-        			bufferCmplxInput[bufferCount]=unoptimizedBuffer[bufferCount/2].real;
-        		}
-        		else
-        		{
-        			bufferCmplxInput[bufferCount]=unoptimizedBuffer[bufferCount/2].imag;
-        		}
-        	}*/
-
-			doFFT_optimized(FFT_SIZE, bufferCmplxInput);
-            arm_cmplx_mag_f32(bufferCmplxInput, bufferOutput, FFT_SIZE);
-
-            SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
-
-        }
 #endif  /* SEND_FROM_MIC */
-        chprintf((BaseSequentialStream *)&SDU1,"Frequency: %f\n\r",getToneFrequency());
-        float toneFrequency=getToneFrequency();
-        int leftMotorSpeed=0;
-        int rightMotorSpeed=0;
-        if(toneFrequency>300 && toneFrequency<600)
+
+        chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
+        switch(state)
         {
-        	leftMotorSpeed=500;
-        	rightMotorSpeed=500;
+        case 0:
+        	setDesiredBearing(0);
+        	setDesiredSpeed(5);
+        	chThdSleepSeconds(1);
+
+        	if(getXPosition()>=10.0f)
+        	{
+        		//set_led(7,1);
+        		state=1;
+        	}
+        	break;
+        case 1:
+        	setDesiredBearing(-PI/2);
+        	if(getYPosition()<=-10.0f)
+        	{
+        		state=5;
+        	}
+
+
+			/*if(distance)
+			{
+				//set_led(7,1);
+				state=5;
+			}*/
+        	break;
+        default:
+        	setDesiredSpeed(0);
+        	//setDesiredBearing(0);
         }
-        else if(toneFrequency>600 && toneFrequency<800)
-        {
-        	leftMotorSpeed=-500;
-        	rightMotorSpeed=-500;
-        }
-        else if(toneFrequency>800 && toneFrequency<1000)
-        {
-        	leftMotorSpeed=500;
-        	rightMotorSpeed=-500;
-        }
-        else if(toneFrequency>1000 && toneFrequency<1200)
-        {
-        	leftMotorSpeed=-500;
-        	rightMotorSpeed=500;
-        }
-        else
-        {
-        	leftMotorSpeed=0;
-        	rightMotorSpeed=0;
-        }
+
         //left_motor_set_speed(leftMotorSpeed);
         //right_motor_set_speed(rightMotorSpeed);
 
