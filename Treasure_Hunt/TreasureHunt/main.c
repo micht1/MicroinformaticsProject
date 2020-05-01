@@ -21,12 +21,6 @@
 #include <audio_processing.h>
 #include <IRSensorReading.h>
 
-//uncomment to send the FFTs results from the real microphones
-//#define SEND_FROM_MIC
-
-//uncomment to use double buffering to send the FFT to the computer
-#define DOUBLE_BUFFERING
-
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -75,38 +69,19 @@ int main(void)
     usb_start();
     //starts timer 12
     timer12_start();
-    //inits the motors
-    startDirectionDetectionThread();
+    //starts the motor and the odometrie
     startMotors();
+    //starts threat which detects from which direction the sound comes
+    startDirectionDetectionThread();
+    //starts obstacle detection
     IRProcessingStart();
 
-
-#ifdef SEND_FROM_MIC
-    //starts the microphones processing thread.
-    //it calls the callback given in parameter when samples are ready
-    mic_start(&processAudioData);
-#endif  /* SEND_FROM_MIC */
 
     /* Infinite loop. */
     while (1) {
 
 
 
-
-	   // chprintf((BaseSequentialStream *) &SD3,"state:%d, xPosition: %f, yPosition: %f\n\r",state,getXPosition(),getYPosition());
-		setScanningRange(-M_PI/4, 3*M_PI/4);
-		if(getScanStatus()==IDLE)
-		{
-				doScanning(true);
-		}
-		float freeBearing[2]={0,0};
-		//chprintf((BaseSequentialStream *) &SD3,"State :%u\n\r",getScanStatus());
-		if(getScanStatus()==FINISHEDSCANNING)
-		{
-			getFreeBearing(freeBearing,2);
-			chprintf((BaseSequentialStream *) &SD3,"LOW HIGH: %f, HIGH LOW: %f\n\r",freeBearing[0],freeBearing[1]);
-			setDesiredBearing(freeBearing[0]);
-		}
 		chThdSleep(MS2ST(100));
     }
 }
