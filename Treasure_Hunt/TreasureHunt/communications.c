@@ -1,9 +1,11 @@
 #include "ch.h"
 #include "hal.h"
 #include <main.h>
+#include <chprintf.h>
 
 #include <communications.h>
 
+static PCMessage_t *computerMessagePointer=NULL;
 /*
 *	Sends floats numbers to the computer
 */
@@ -90,4 +92,29 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, float* data, uint16_
 
 	return temp_size/2;
 
+}
+void setMessage (PCMessage_t *messageToSend)
+{
+	if(messageToSend!=NULL)
+	{
+		computerMessagePointer=messageToSend;
+	}
+}
+void messageReady(bool isReady)
+{
+	computerMessagePointer->updated=isReady;
+	sendEventDataToComputer();
+}
+
+uint8_t sendEventDataToComputer(void)
+{
+	if(computerMessagePointer!=NULL)
+	{
+		if(computerMessagePointer->updated==true)
+		{
+			chprintf((BaseSequentialStream *) &SD3,"X: %f,Y: %f,Sound: %f,Desired: %f,obstacle: %f\n\r",computerMessagePointer->xPosition, computerMessagePointer->yPosition, computerMessagePointer->directionOfSound, computerMessagePointer->avoidanceDirection, computerMessagePointer->obstacleDirection);
+			return 1;
+		}
+	}
+	return 0;
 }

@@ -14,6 +14,7 @@ void setDesiredBearing(float desiredBearing);
 float getXPosition(void);
 float getYPosition(void);
 float getBearing(void);
+bool isRotating(void);
 void limitWheelSpeed(int16_t speedLimit);
 
 #endif /* DRIVEMOTORS_H */

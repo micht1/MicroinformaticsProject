@@ -33,6 +33,7 @@ static float desiredBearingPhi=0;
 static float bearingPhi=0;
 static int16_t desiredSpeed=0;
 static bool stop=false;
+static bool rotating=false;
 static int16_t maxWheelSpeed=MAXWHEELSPEED;
 
 static THD_WORKING_AREA(driveMotor_thd_was, 256);
@@ -56,12 +57,17 @@ static THD_FUNCTION(driveMotor_thd, arg)
     	int16_t forwardSpeed=0;							//speed in cm/s
     	float rotationalSpeed=0;
 
-    	if(fabs(desiredBearingPhi-bearingPhi)<0.05f && stop==false)
+    	if(fabs(desiredBearingPhi-bearingPhi)<0.05f)
     	{
-    		forwardSpeed=desiredSpeed;
+    		if(stop==false)
+    		{
+    			forwardSpeed=desiredSpeed;
+    		}
+    		rotating=false;
     	}
     	else
     	{
+    		rotating=true;
     		forwardSpeed=0;
     	}
 
@@ -102,6 +108,15 @@ static THD_FUNCTION(driveMotor_thd, arg)
 		else if(desiredSpeedRight<-maxWheelSpeed)
 		{
 			desiredSpeedRight=-maxWheelSpeed;
+		}
+    	if(fabs(bearingPhi-desiredBearingPhi)>M_PI)
+    	{
+    		desiredSpeedLeft=-desiredSpeedLeft;
+    		desiredSpeedRight=-desiredSpeedRight;
+    	}
+    	if(forwardSpeed<MAXWHEELSPEED && rotating==true)
+		{
+			//chprintf((BaseSequentialStream *) &SD3,"DSpeedL: %d, DSpeedR: %d\n\r",desiredSpeedLeft,desiredSpeedRight);
 		}
     	left_motor_set_speed(desiredSpeedLeft);
     	right_motor_set_speed(desiredSpeedRight);
@@ -169,18 +184,8 @@ void isAllowedToDrive(bool doDrive)
 }
 void setDesiredBearing(float desiredBearing)
 {
-	if(desiredBearing>MAXBEARING)
-	{
-		desiredBearingPhi=MAXBEARING;
-	}
-	else if(desiredBearing<-MAXBEARING)
-	{
-		desiredBearingPhi=-MAXBEARING;
-	}
-	else
-	{
-		desiredBearingPhi=desiredBearing;
-	}
+	desiredBearingPhi=wrapAngle(desiredBearing);
+	rotating=true;
 }
 float getXPosition(void)
 {
@@ -204,4 +209,8 @@ void limitWheelSpeed(int16_t speedLimit)
 	{
 		maxWheelSpeed=MAXWHEELSPEED;
 	}
+}
+bool isRotating(void)
+{
+	return rotating;
 }

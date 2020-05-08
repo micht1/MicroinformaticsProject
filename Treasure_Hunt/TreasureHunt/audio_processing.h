@@ -5,7 +5,7 @@
 #define FFT_SIZE 	1024
 
 #define FREQUENCYCOEFFIZIENT 15.23
-#define MINSOUNDLEVEL 4000
+#define MINSOUNDLEVEL 6000
 
 #define FREQUENCYTOFIND 2000	//
 #define MAXPHASEANGLE 3.1f		//might need checking

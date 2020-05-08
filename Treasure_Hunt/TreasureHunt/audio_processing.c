@@ -107,8 +107,8 @@ float calculateDirectionOfSound(float *phaseShift,uint8_t phaseArraySize,uint16_
 		}
 		else if(isnanf(angleFB1) && isnanf(angleLR1))
 		{
-			angle=NAN;
-			chprintf((BaseSequentialStream *)&SD3,"NaN\n\r");
+			angle=3*M_PI;
+			//chprintf((BaseSequentialStream *)&SD3,"NaN\n\r");
 		}
 		else
 		{
@@ -127,7 +127,7 @@ float calculateDirectionOfSound(float *phaseShift,uint8_t phaseArraySize,uint16_
 			}
 			else
 			{
-				chprintf((BaseSequentialStream *)&SD3," O.O \n\r");
+				//chprintf((BaseSequentialStream *)&SD3," O.O \n\r");
 			}
 
 
@@ -143,7 +143,7 @@ float calculateDirectionOfSound(float *phaseShift,uint8_t phaseArraySize,uint16_
 			switch(smallestDiff)
 			{
 			case LEFTRIGHT1:
-				angle =	angleLR1*leftRightWeight+angleFB1*frontBackWeight;		//toDo: determine which side is positive left side is positive
+				angle =	angleLR1*leftRightWeight+angleFB1*frontBackWeight;
 				break;
 			case LEFTRIGHT2:
 				angle =	angleLR1*leftRightWeight-angleFB1*frontBackWeight;
@@ -156,7 +156,7 @@ float calculateDirectionOfSound(float *phaseShift,uint8_t phaseArraySize,uint16_
 				angle =	angleLR2*leftRightWeight-angleFB1*frontBackWeight;
 				break;
 			}
-			chprintf((BaseSequentialStream *)&SD3,"smallestDiff : %u\n\r",smallestDiff);
+			//chprintf((BaseSequentialStream *)&SD3,"smallestDiff : %u\n\r",smallestDiff);
 		}
 		// functions used to debug
 
@@ -267,9 +267,9 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 			}
 
 			relativeAngle = calculateDirectionOfSound(phaseShift,NBOFPHASES,FREQUENCYTOFIND);
-			float angleCalculated= (relativeAngle)/M_PI*180;
+			//float angleCalculated= (relativeAngle)/M_PI*180;
 
-			chprintf((BaseSequentialStream *)&SD3,"Angle %f\n\r",angleCalculated);
+			//chprintf((BaseSequentialStream *)&SD3,"Angle %f\n\r",angleCalculated);
 
 		}
 		else
