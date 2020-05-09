@@ -35,7 +35,7 @@ static bool stop=false;					// variable used to track if robot is allowed to dri
 static bool rotating=false;				// tracks if the robot is rotating or not
 static int16_t maxWheelSpeed=MAXWHEELSPEED;	 // maximal allowed wheel speed
 
-static THD_WORKING_AREA(driveMotor_thd_was, 256);
+static THD_WORKING_AREA(driveMotor_thd_was, 128);
 static THD_FUNCTION(driveMotor_thd, arg)
 {
     (void) arg;

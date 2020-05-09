@@ -47,7 +47,7 @@ uint8_t sendEventDataToComputer(void)
 			messageBuffer[5]=sin(computerMessagePointer->obstacleDirection);
 			messageBuffer[6]=cos(computerMessagePointer->avoidanceDirection);
 			messageBuffer[7]=sin(computerMessagePointer->avoidanceDirection);
-			SendFloatToComputer((BaseSequentialStream *) &SD3,messageBuffer,sizeof(messageBuffer)/sizeof(messageBuffer[0]));
+			SendFloatToComputer((BaseSequentialStream *) &SD3,messageBuffer,COMPUTERMESSAGESIZE);
 			//chprintf((BaseSequentialStream *) &SD3,"X: %f,Y: %f,Sound: %f,Desired: %f,obstacle: %f\n\r",computerMessagePointer->xPosition, computerMessagePointer->yPosition, computerMessagePointer->directionOfSound, computerMessagePointer->avoidanceDirection, computerMessagePointer->obstacleDirection);
 			return 1;
 		}

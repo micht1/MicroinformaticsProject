@@ -40,7 +40,7 @@ static IRData processingValues={0};
 /**
  * beginning of the thread
  */
-static THD_WORKING_AREA(IRSensorProcessing_wa, 1024);
+static THD_WORKING_AREA(IRSensorProcessing_wa, 256);
 static THD_FUNCTION(IRSensorProcessing, arg) {
      (void) arg;
      chRegSetThreadName(__FUNCTION__);

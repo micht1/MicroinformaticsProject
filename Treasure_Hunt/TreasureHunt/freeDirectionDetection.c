@@ -23,7 +23,7 @@ static float bearingCF=0;				//internal variables used to save the bearing where
 
 
 
-static THD_WORKING_AREA(freeDirection_thd_was, 512);
+static THD_WORKING_AREA(freeDirection_thd_was, 128);
 static THD_FUNCTION(freeDirection_thd, arg)
 {
 	(void) arg;

@@ -28,7 +28,7 @@
 #define STABILITYTHRESHOLD 10		// defines how many new angles need to be considered stable before the travel direction is changed
 
 #define TRAVELSPEED 15				// speed at which the robot normally should travel
-#define ATTREASURELEVEL 80000		// sound level which indicates that the robot is near the goal
+#define ATTREASURELEVEL 90000		// sound level which indicates that the robot is near the goal
 #define MAINTHREADPERIOD 100
 #define OVERSHOOTTIME 1000			// amount of time the robot sould travel on the avoidance path after no obstacle was detected anymore
 
@@ -232,7 +232,7 @@ int main(void)
     		break;
     	case TESTING:		//if needed test programms can be inserted here.
        		chprintf((BaseSequentialStream *) &SD3,"This is the TestState, You have no business being here\n\r");
-    		break;
+       		break;
     	}
     	blinkingCounter = (blinkingCounter>BLINKINGCOUNTERMAXIMUM) ? 0 : (blinkingCounter+1) ;
 		chThdSleep(MS2ST(MAINTHREADPERIOD));
