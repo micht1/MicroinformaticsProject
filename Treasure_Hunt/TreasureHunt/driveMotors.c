@@ -114,10 +114,7 @@ static THD_FUNCTION(driveMotor_thd, arg)
     		desiredSpeedLeft=-desiredSpeedLeft;
     		desiredSpeedRight=-desiredSpeedRight;
     	}
-    	if(forwardSpeed<MAXWHEELSPEED && rotating==true)
-		{
-			//chprintf((BaseSequentialStream *) &SD3,"DSpeedL: %d, DSpeedR: %d\n\r",desiredSpeedLeft,desiredSpeedRight);
-		}
+
     	left_motor_set_speed(desiredSpeedLeft);
     	right_motor_set_speed(desiredSpeedRight);
 
@@ -148,7 +145,6 @@ static THD_FUNCTION(driveMotor_thd, arg)
     	xPosition = xPosition+cosf(bearingPhi)*estimatedForwardVelocity*REGULATORPERIOD/1000.0f;
     	yPosition = yPosition+sinf(bearingPhi)*estimatedForwardVelocity*REGULATORPERIOD/1000.0f;
     	bearingPhi=wrapAngle(bearingPhi);
-    	//chprintf((BaseSequentialStream *) &SD3,"vel:%f filteredLeft:%d filteredRight:%d rawLeft %d rawRight %d \n\r",estimatedForwardVelocity,filtredSpeedLeft,filtredSpeedRight, actualSpeedLeft,actualSpeedRight);
     	chThdSleepUntilWindowed(time,time+MS2ST(REGULATORPERIOD));
 
     }

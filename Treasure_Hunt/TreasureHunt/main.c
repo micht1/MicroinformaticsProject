@@ -37,13 +37,15 @@
 #define FRONTAREA 30
 #define BLINKINGCOUNTERMAXIMUM 100
 
+#define NUMBEROFLED 4
 
-#define NUMBEROFPATTERN 6
-const uint8_t ledPatterns[NUMBEROFPATTERN][4] = {{0,0,0,0},{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1},{1,0,0,0}};
-
+#define ROTATINGLEDSIZE 6
+const uint8_t rotatingLed[ROTATINGLEDSIZE][NUMBEROFLED] = {{0,0,0,0},{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1},{1,0,0,0}};
+#define VICTOYDANCESIZE 2
+const uint8_t victoryDance[VICTOYDANCESIZE][NUMBEROFLED] ={{1,0,1,0},{0,1,0,1}};
 // function prototypes
 bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float *obstacleDirection);
-void rotateLed(bool doRotate);
+void rotateLed(bool doRotate,const uint8_t ledPattern[][NUMBEROFLED],uint8_t patternSize);
 //inline functions and macros
  inline float scanRange(float x)
 {
@@ -137,7 +139,7 @@ int main(void)
 
     		if(blinkingCounter%2==0)
     		{
-    			rotateLed(true);
+    			rotateLed(true,rotatingLed,ROTATINGLEDSIZE);
     		}
     		if(getSoundLevel()>MINSOUNDLEVEL)
     		{
@@ -148,12 +150,12 @@ int main(void)
     			stabilityCounter=0;
     			set_body_led(0);
     			currentStatus=FOLLOWINGSOUND;
-    			rotateLed(false);
+    			rotateLed(false,rotatingLed,ROTATINGLEDSIZE);
     		}
     		if(oldSwitch!=get_selector())
 			{
 				currentStatus=ROBOTSTOP;
-				rotateLed(false);
+				rotateLed(false,rotatingLed,ROTATINGLEDSIZE);
 			}
     		oldSwitch=get_selector();
     		break;
@@ -177,7 +179,6 @@ int main(void)
 					firstSoundLock=true;
 					desiredTravelBearing=wrapAngle(filteredBearing);
 					stabilityCounter=0;
-					chprintf((BaseSequentialStream *) &SD3,"SoundBearing: %f\n\r",filteredBearing);
 				}
     		}
     		if(firstSoundLock)
@@ -202,7 +203,6 @@ int main(void)
     			computerMessage.directionOfSound=desiredTravelBearing;
     			computerMessage.xPosition=getXPosition();
     			computerMessage.yPosition=getYPosition();
-    			chprintf((BaseSequentialStream *) &SD3,"S Obstacle: %f\n\r",getObstacleDirection());
     			currentStatus=AVOIDINGOBSTACLE;
     		}
     		else if(presenceOfObstacle()>NOOBSTACLE && soundTrigger==true)
@@ -221,23 +221,14 @@ int main(void)
     	case REACHEDTREASURE:
     		set_body_led(1);
     		setDesiredSpeed(0);
-    		if(blinkingCounter%10==0)
+    		if(blinkingCounter%5==0)
     		{
-    			set_led(LED1,1);
-    			set_led(LED3,0);
-    			set_led(LED5,1);
-    			set_led(LED7,0);
-
-    		}
-    		else if(blinkingCounter%5==0)
-    		{
-    			set_led(LED1,0);
-				set_led(LED3,1);
-				set_led(LED5,0);
-				set_led(LED7,1);
+    			rotateLed(true,victoryDance,VICTOYDANCESIZE);
     		}
     		if(oldSwitch!=get_selector())
 			{
+    			set_body_led(0);
+    			rotateLed(false,victoryDance,VICTOYDANCESIZE);
 				currentStatus=ROBOTSTOP;
 			}
 			oldSwitch=get_selector();
@@ -266,8 +257,6 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 		{
 			directionOfObstacle=wrapAngle(getObstacleDirection()/180*M_PI+getBearing());
 			*obstacleDirection=directionOfObstacle;
-			chprintf((BaseSequentialStream *) &SD3,"Obstacle direction0: %f\n\r",getObstacleDirection());
-			chprintf((BaseSequentialStream *) &SD3,"currentBearing0: %f\n\r",getBearing()/M_PI*180);
 			noObstacleAnymore=0;
 			setScanningRange(directionOfObstacle-M_PI/9*5,directionOfObstacle+M_PI/9*5);
 			doScanning(true);
@@ -281,8 +270,6 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 			if((freeBearings[0])>2*M_PI && (freeBearings[1])>2*M_PI)
 			{
 				chprintf((BaseSequentialStream *) &SD3,"No Pathfound\n\r");
-				//obstacleAvoidanceStep=0;
-				//noPathFound++;
 				set_body_led(1);
 			}
 			else
@@ -290,10 +277,9 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 				obstacleAvoidanceStep=2;
 				if((freeBearings[0])>2*M_PI || (freeBearings[1])>2*M_PI)
 				{
-					//chprintf((BaseSequentialStream *) &SD3,"is NaN\n\r");
+					//toDo: Handeling of situation where no free bearings are found
 				}
 				float closestFreeBearing = (fabs(intendedTravelBearing-freeBearings[0])<fabs(intendedTravelBearing-freeBearings[1])) ? freeBearings[0]: freeBearings[1];
-				chprintf((BaseSequentialStream *) &SD3,"closestFree Bearing: %f\n\r",closestFreeBearing);
 				float possibleTravelDirection1=(directionOfObstacle+M_PI/2);
 				float possibleTravelDirection2=(directionOfObstacle-M_PI/2);
 				avoidanceTravelDirection=(fabs(possibleTravelDirection1-closestFreeBearing)<fabs(possibleTravelDirection2-closestFreeBearing)) ? possibleTravelDirection1: possibleTravelDirection2;
@@ -309,45 +295,28 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 
 		if(!isRotating())
 		{
-			/*if(abs(abs(getObstacleDirection())-ATSIDE)<10)
-			{*/
-			chprintf((BaseSequentialStream *) &SD3,"obstacle is at Side %f\n\r",fabs(getObstacleDirection()));
-				ignoreObstacle(true);
-				isAllowedToDrive(true);
-				setDesiredSpeed(TRAVELSPEED);
-				obstacleAvoidanceStep=3;
-			//}
-
-
-
+			ignoreObstacle(true);
+			isAllowedToDrive(true);
+			setDesiredSpeed(TRAVELSPEED);
+			obstacleAvoidanceStep=3;
 		}
-		//chprintf((BaseSequentialStream *) &SD3,"is rotating: %u\n\r",isRotating());
 		break;
 	case 3:
-		//ignoreObstacle(false);
 		if(presenceOfObstacle()==DANGERCLOSE && fabs(getObstacleDirection())<BACKAREA)
 		{
 			obstacleAvoidanceStep=4;
 
 			setDesiredBearing((float)getObstacleDirection()/180*M_PI+getBearing());
-			chprintf((BaseSequentialStream *) &SD3,"Danger Close %f\n\r",(float)getObstacleDirection()+getBearing()/M_PI*180);
 			setDesiredSpeed(-TRAVELSPEED);
 		}
 		else if(presenceOfObstacle()==NOOBSTACLE)
 		{
 			noObstacleAnymore++;
-			//chprintf((BaseSequentialStream *) &SD3,"MissingObstacle %u\n\r",noObstacleAnymore);
 		}
 		if(presenceOfObstacle()>NOOBSTACLE)
 		{
-			//chprintf((BaseSequentialStream *) &SD3,"Obstacle %u\n\r",noObstacleAnymore);
 			noObstacleAnymore = (noObstacleAnymore>0) ? (noObstacleAnymore-1) : 0;
-
 		}
-		/*if(fabs(getObstacleDirection())<FRONTAREA && presenceOfObstacle()==OBSTACLEDETECTED)
-		{
-			obstacleAvoidanceStep=5;
-		}*/
 		if(noObstacleAnymore>OVERSHOOTTIME/MAINTHREADPERIOD)
 		{
 			obstacleAvoidanceStep=0;
@@ -355,7 +324,6 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 			ignoreObstacle(false);
 			return true;
 		}
-		//chprintf((BaseSequentialStream *) &SD3,"ir3: %d\n\r",get_calibrated_prox(2));
 		break;
 	case 4:
 		if(presenceOfObstacle()<=OBSTACLEDETECTED)
@@ -363,7 +331,6 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 			setDesiredBearing(avoidanceTravelDirection);
 			obstacleAvoidanceStep=3;
 			setDesiredSpeed(TRAVELSPEED);
-
 		}
 		if(fabs(getObstacleDirection())>BACKAREA)
 		{
@@ -375,29 +342,29 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 		ignoreObstacle(false);
 		obstacleAvoidanceStep=0;
 		setDesiredBearing(intendedTravelBearing);
-
 		break;
-
 	}
-	//chprintf((BaseSequentialStream *) &SD3,"Step : %d\n\r",obstacleAvoidanceStep);
-	//chprintf((BaseSequentialStream *) &SD3,"step: %u, avoidance Direction: %f, presenceof: %u\n\r",obstacleAvoidanceStep,avoidanceTravelDirection,presenceOfObstacle());
 	return false;
 }
-void rotateLed(bool doRotate)
+void rotateLed(bool doRotate,const uint8_t ledPattern[][NUMBEROFLED],uint8_t patternSize)
 {
 	static uint8_t ledPatternCounter=0;
+
+	ledPattern[ledPatternCounter][0] ? set_led(LED1,1) : set_led(LED1,0);
+	ledPattern[ledPatternCounter][1] ? set_led(LED3,1) : set_led(LED3,0);
+	ledPattern[ledPatternCounter][2] ? set_led(LED5,1) : set_led(LED5,0);
+	ledPattern[ledPatternCounter][3] ? set_led(LED7,1) : set_led(LED7,0);
 	if(doRotate==false)
 	{
-		ledPatternCounter=0;
+		set_led(LED1,0);
+		set_led(LED3,0);
+		set_led(LED5,0);
+		set_led(LED7,0);
 	}
 	else
 	{
-		ledPatternCounter=(ledPatternCounter>=NUMBEROFPATTERN-1) ? 0 : ledPatternCounter+1;
+		ledPatternCounter=(ledPatternCounter>=patternSize-1) ? 0 : ledPatternCounter+1;
 	}
-	ledPatterns[ledPatternCounter][0] ? set_led(LED1,1) : set_led(LED1,0);
-	ledPatterns[ledPatternCounter][1] ? set_led(LED3,1) : set_led(LED3,0);
-	ledPatterns[ledPatternCounter][2] ? set_led(LED5,1) : set_led(LED5,0);
-	ledPatterns[ledPatternCounter][3] ? set_led(LED7,1) : set_led(LED7,0);
 
 }
 #define STACK_CHK_GUARD 0xe2dee396

@@ -6,22 +6,19 @@
 #include "main.h"
 #include <chprintf.h>
 #include "driveMotors.h"
-
 #include "sensors/proximity.h"
-
 #include "IRSensorReading.h"
-bool doSendDebugData=false;
 
 //***defines
-#define SENSORTRIGGERHIGHVALUE 200
-#define SENSORTRIGGERLOWVALUE 100
-#define OBSTACLECLOSE 700
-#define SENSORCORRECTION 0
-#define IRFILTER 0.5
-#define SENSORMAXVALUE 3000
-#define BEHINDAREA 180
+#define SENSORTRIGGERHIGHVALUE 200		// value at which the sensor is considered as  triggered
+#define SENSORTRIGGERLOWVALUE 100		// value under which the sensor is considered not triggered anymore
+#define OBSTACLECLOSE 700				// value over which the obstacle is considered, very close
+#define SENSORCORRECTION 0			//value used if different behaviour is desired from the front side and the 2 back side sensor
+#define IRFILTER 0.5				// value for the simple lowpass filter y = IRFILTER*x+(1-IRFILTER)*y
+#define SENSORMAXVALUE 3000			// value over which the data from the sensor is considered nonsense
+#define BEHINDAREA 180				//value in degress when both backside senors are triggered
 
-
+// some defines to align the IR-sensor number on the robot with the number in the programm
 #define IR1 0
 #define IR2 1
 #define IR4 3
@@ -31,6 +28,7 @@ bool doSendDebugData=false;
 
 
 //*****constants
+// array containing the angles with which the sensors are monted on the robot. They are in degrees
 const int8_t IRSensorDegree[PROXIMITY_NB_CHANNELS]={-17,-49,-90,-120,120,90,49,17};
 
 
@@ -39,6 +37,9 @@ const int8_t IRSensorDegree[PROXIMITY_NB_CHANNELS]={-17,-49,-90,-120,120,90,49,1
 //********static variables
 static IRData processingValues={0};
 
+/**
+ * beginning of the thread
+ */
 static THD_WORKING_AREA(IRSensorProcessing_wa, 1024);
 static THD_FUNCTION(IRSensorProcessing, arg) {
      (void) arg;
@@ -47,12 +48,14 @@ static THD_FUNCTION(IRSensorProcessing, arg) {
      messagebus_topic_t *IRValuesTopic;
      IRValuesTopic=messagebus_find_topic(&bus, "/proximity");
      proximity_msg_t irValues;
-     int sensorValues[PROXIMITY_NB_CHANNELS]={0};
-     presenceOfObstacle_t triggeredSensors[PROXIMITY_NB_CHANNELS]={0};
+
+     int sensorValues[PROXIMITY_NB_CHANNELS]={0};					// array used to save filtered values of the sensors
+     presenceOfObstacle_t triggeredSensors[PROXIMITY_NB_CHANNELS]={0};	//array used to save the trigger status of the sensor
      while(true)
      {
-    	 messagebus_topic_wait(IRValuesTopic, &irValues, sizeof(irValues));
+    	 messagebus_topic_wait(IRValuesTopic, &irValues, sizeof(irValues));		//wait for new data
 
+    	 // go through all sensors and check which one is triggered, which one is not after the values where somewhat filtered
     	 for(uint8_t sensorCounter=0;sensorCounter<PROXIMITY_NB_CHANNELS;sensorCounter++)
 		 {
     		 if(get_calibrated_prox(sensorCounter)<SENSORMAXVALUE)
@@ -70,7 +73,6 @@ static THD_FUNCTION(IRSensorProcessing, arg) {
 				 else if(sensorValues[sensorCounter]>(SENSORTRIGGERHIGHVALUE+triggerCorrection))
 				 {
 
-					 //chprintf((BaseSequentialStream *)&SD3,"sensor%d: %d",sensorCounter,sensorValues[sensorCounter]);
 					 triggeredSensors[sensorCounter]=OBSTACLEDETECTED;
 
 				 }
@@ -88,9 +90,8 @@ static THD_FUNCTION(IRSensorProcessing, arg) {
     			 processingValues.directionOfObstacle=0;
     		 }
 		 }
+    	 // go through all sensors and check which are triggered. save the status and calculate the angle of the obstacle
     	 uint8_t nbOfTriggeredSensors=0;
-
-    	 //chprintf((BaseSequentialStream *)&SD3,"value: %d\n\r",processingValues.directionOfObstacle);
     	 for(uint8_t sensorCounter=0;sensorCounter<PROXIMITY_NB_CHANNELS;sensorCounter++)
 		 {
     		 if(triggeredSensors[sensorCounter]>NOOBSTACLE)
@@ -108,45 +109,35 @@ static THD_FUNCTION(IRSensorProcessing, arg) {
     			 }
     		 }
 		 }
+    	 //catch an exception when +120° and -120° are triggered
     	 if((triggeredSensors[IR4]>NOOBSTACLE && triggeredSensors[IR5]>NOOBSTACLE))
 		 {
 			 processingValues.directionOfObstacle=(BEHINDAREA);
 			 nbOfTriggeredSensors=1;
 		 }
-
-    	// chprintf((BaseSequentialStream *)&SD3,"n: %u,sV: %d,presence %d\n\r",nbOfTriggeredSensors,sensorValues[2],processingValues.obstaclePresence);
+    	 //make sure if no sensors are triggered the status is NOOBSTACLE
     	 if(nbOfTriggeredSensors==0)
     	 {
     		 processingValues.obstaclePresence=NOOBSTACLE;
     	 }
     	 else
     	 {
+    		 //stop the robot if any obstalce is detected
     		 if(processingValues.ignoringObstacle==false)
     		 {
     			 isAllowedToDrive(false);
     		 }
     	 }
+    	 // provide additional information
     	 if(triggeredSensors[IR1]>NOOBSTACLE || triggeredSensors[IR2]>NOOBSTACLE ||triggeredSensors[IR7]>NOOBSTACLE ||triggeredSensors[IR8]>NOOBSTACLE)
     	 {
     		 processingValues.aheadIsOK=false;
-    		 //chprintf((BaseSequentialStream *)&SD3,"0: %u,1: %u,6: %u,7: %u,\n\r",irValues.delta[0],irValues.delta[1],irValues.delta[6],irValues.delta[7]);
     	 }
     	 else
     	 {
     		 processingValues.aheadIsOK=true;
     	 }
     	 processingValues.directionOfObstacle=processingValues.directionOfObstacle/nbOfTriggeredSensors;
-
-
-		 /*if(nbOfTriggeredSensors>0)
-    	 {
-    		 chprintf((BaseSequentialStream *)&SD3,"direction: %d\n\r",processingValues.directionOfObstacle);
-    	 }*/
-    	 //chprintf((BaseSequentialStream *)&SD3,"sensorVlue: %u\n\r",irValues.delta[0]);
-    	// chprintf((BaseSequentialStream *)&SD3,"angle: %d\n\r",processingValues.directionOfObstacle);
-    	// chprintf((BaseSequentialStream *)&SD3,"angle: %d, obstaclePresence: %d,ahead : %d\n\r",processingValues.directionOfObstacle,processingValues.obstaclePresence,processingValues.aheadIsOK);
-
-    	 //chprintf((BaseSequentialStream *)&SD3,"Published present: %s, Value: %d\n\r",processingValues.obstaclePresent ? "true" : "false",processingValues.directionOfObstacle);
      }
 }
 

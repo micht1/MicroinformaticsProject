@@ -2,7 +2,7 @@
 #define IRSENSOREADING_H
 #include "msgbus/messagebus.h"
 
-typedef enum {NOOBSTACLE,OBSTACLEDETECTED,DANGERCLOSE}presenceOfObstacle_t;
+typedef enum {NOOBSTACLE,OBSTACLEDETECTED,DANGERCLOSE}presenceOfObstacle_t;	//enumeration with which the status of the obstacle detection is described
 /**
  * The struct in which the data of the Obstacle direction detection is saved
  */
@@ -20,6 +20,11 @@ extern messagebus_t bus;
 /**
  * @brief: starts the thread used for IR-Sensor detection with Normal Priority and the proximity-thread
  * The thread is directly linked to the proximity-thread. It only runs when new data is aviable.
+ *  		 *0*
+ * 		   *	 *
+ * 		 90		 -90
+ * 		   *	 *
+ * 		    *180*
  */
 void IRProcessingStart(void);
 
@@ -41,7 +46,7 @@ void ignoreObstacle(bool doIgnoreObstacle);
  */
 bool aheadIsOk(void);
 /**
- * @brief: calculates the direction of the obstacle with the data provided by the proximity-thread.
+ * @brief: returns the direction of the obstacle with the data provided by the proximity-thread.
  *  		 -0-
  * 		   *	 *
  * 		 90		 -90

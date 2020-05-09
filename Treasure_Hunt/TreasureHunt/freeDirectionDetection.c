@@ -47,7 +47,6 @@ static THD_FUNCTION(freeDirection_thd, arg)
 				bearingFC=0;
 				oldDistance=0;
 				currentDistance=0;
-				chprintf((BaseSequentialStream *) &SD3,"inter: %f start: %f, end: %f\n\r",intermediaryBearing/M_PI*180,startingBearing/M_PI*180,endingBearing/M_PI*180);
 				halfOfScan=0;
 			}
 			break;
@@ -57,7 +56,6 @@ static THD_FUNCTION(freeDirection_thd, arg)
 				scanStatus=SCANNINGROTATION;
 				limitWheelSpeed(SCANWHEELSPEED);
 				setDesiredBearing(intermediaryBearing);
-				//chprintf((BaseSequentialStream *) &SD3,"endb: %f\n\r",endingBearing);
 			}
 			else if(halfOfScan>0 && doScan==true)
 			{
@@ -86,8 +84,6 @@ static THD_FUNCTION(freeDirection_thd, arg)
 				minDelta=oldDistance - currentDistance;
 				minBearing=getBearing();
 			}
-			//chprintf((BaseSequentialStream *) &SD3,"max: %d, min %d\n\r",maxDelta,minDelta);
-			//chprintf((BaseSequentialStream *) &SD3,"bearing %f, maxB:\n\r",getBearing());
 			oldDistance=currentDistance;
 			if((fabs(getBearing()-intermediaryBearing)<ENDINGTOLERANCE)&& halfOfScan==0)
 			{
@@ -104,14 +100,11 @@ static THD_FUNCTION(freeDirection_thd, arg)
 				if(minDelta==-MINDETECTIONDELTA)
 				{
 					bearingCF=3*M_PI;
-					//chprintf((BaseSequentialStream *) &SD3,"Nan1:%d\n\r",scanStatus);
 				}
 				if(maxDelta==MINDETECTIONDELTA)
 				{
 					bearingFC=3*M_PI;
-					//chprintf((BaseSequentialStream *) &SD3,"Nan2\n\r");
 				}
-				//chprintf((BaseSequentialStream *) &SD3,"SpeedLimited\n\r");
 				limitWheelSpeed(MAXWHEELSPEED);
 			}
 			break;
@@ -121,9 +114,6 @@ static THD_FUNCTION(freeDirection_thd, arg)
 			break;
 
 		}
-		//chprintf((BaseSequentialStream *) &SD3,"Scanning Status: %d\n\r",scanStatus);
-		//chprintf((BaseSequentialStream *) &SD3,"status: %u\n\r",scanStatus);
-		//chprintf((BaseSequentialStream *) &SD3,"status :%u, bearing: %f, currentdistance %u\n\r",scanStatus, getBearing(),VL53L0X_get_dist_mm());
 		chThdSleep(MS2ST(50));
 	}
 
@@ -147,8 +137,6 @@ void setScanningRange(float beginningBearing, float endBearing)
 	{
 		intermediaryBearing = (beginningBearing +endBearing)/2;
 		intermediaryBearing = (beginningBearing>intermediaryBearing) ? intermediaryBearing+M_PI :intermediaryBearing;
-
-		chprintf((BaseSequentialStream *) &SD3,"beginning: %f, end: %fn\r",beginningBearing/M_PI*180,endBearing/M_PI*180);
 		beginningBearing=wrapAngle(beginningBearing);
 		intermediaryBearing=wrapAngle(intermediaryBearing);
 		endBearing=wrapAngle(endBearing);
@@ -163,7 +151,6 @@ void getFreeBearing(float *freeBearings,uint8_t bearingSize)
 	{
 		freeBearings[0]=bearingFC;
 		freeBearings[1]=bearingCF;
-		chprintf((BaseSequentialStream *) &SD3,"fc: %f,cf %f\n\r",bearingFC,bearingCF);
 	}
 	else
 	{
