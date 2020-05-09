@@ -36,7 +36,7 @@ presenceOfObstacle_t presenceOfObstacle(void);
 /**
  * @brief: The thread stops the forward motion if an obstacle is detected, this function disables this,
  * which means the robot can move even when an obstacle is detected
- * @param[in]: bool set to true if obstacle should be ignored
+ * @param[in] doIgnoreObstaclebool: set to true if obstacle should be ignored
  */
 void ignoreObstacle(bool doIgnoreObstacle);
 /**

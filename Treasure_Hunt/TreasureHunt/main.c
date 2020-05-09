@@ -23,22 +23,23 @@
 #include <IRSensorReading.h>
 
 // defines
-#define ANGLEFILTER 0.1f
-#define ANGLETHRESHOLD 0.30f
-#define STABILITYTHRESHOLD 10
+#define ANGLEFILTER 0.1f			// filtecoeffizient used in the simple filter of the angle measurement
+#define ANGLETHRESHOLD 0.30f		// angle under which the newly measured angle is close enough to the filtered angle to be considered stable
+#define STABILITYTHRESHOLD 10		// defines how many new angles need to be considered stable before the travel direction is changed
 
-#define TRAVELSPEED 15
-#define ATTREASURELEVEL 80000
-#define MAINTHREADPERIOD 99
-#define OVERSHOOTTIME 1000
+#define TRAVELSPEED 15				// speed at which the robot normally should travel
+#define ATTREASURELEVEL 80000		// sound level which indicates that the robot is near the goal
+#define MAINTHREADPERIOD 100
+#define OVERSHOOTTIME 1000			// amount of time the robot sould travel on the avoidance path after no obstacle was detected anymore
 
-#define ATSIDE 90
-#define BACKAREA 120
-#define FRONTAREA 30
-#define BLINKINGCOUNTERMAXIMUM 100
+#define ATSIDE 90					// side is at +- 90°
+#define BACKAREA 120				// behind robot is at+-120§
+#define FRONTAREA 30				//in front of the robot is at +-30°
+#define BLINKINGCOUNTERMAXIMUM 99	// maximum to where the counter counts
 
-#define NUMBEROFLED 4
+#define NUMBEROFLED 4				// number of red led
 
+// 2 blinking patterns
 #define ROTATINGLEDSIZE 6
 const uint8_t rotatingLed[ROTATINGLEDSIZE][NUMBEROFLED] = {{0,0,0,0},{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1},{1,0,0,0}};
 #define VICTOYDANCESIZE 2
@@ -46,11 +47,7 @@ const uint8_t victoryDance[VICTOYDANCESIZE][NUMBEROFLED] ={{1,0,1,0},{0,1,0,1}};
 // function prototypes
 bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float *obstacleDirection);
 void rotateLed(bool doRotate,const uint8_t ledPattern[][NUMBEROFLED],uint8_t patternSize);
-//inline functions and macros
- inline float scanRange(float x)
-{
-	return M_PI*(5+x)/9;
-}
+
 
 static void serial_start(void)
 {
@@ -84,10 +81,9 @@ static void timer12_start(void){
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
-//static complex_float unoptimizedBuffer[FFT_SIZE];
 int main(void)
 {
-
+	//initialise peripherie and start threads
     halInit();
     chSysInit();
     mpu_init();
@@ -112,30 +108,30 @@ int main(void)
 
 
 
-    robotStatus_t currentStatus=ROBOTSTOP;
-    float desiredTravelBearing=0;
-    float currentSoundBearing=0;
-    float filteredBearing=0;
-    int oldSwitch=get_selector();
-    bool soundTrigger=false;
-    uint8_t stabilityCounter=0;
-    bool firstSoundLock=false;
-    PCMessage_t computerMessage={0};
-    setMessage (&computerMessage);
-    uint8_t blinkingCounter=0;
+    robotStatus_t currentStatus=ROBOTSTOP;		//	variable which tracks status of the robot
+    float desiredTravelBearing=0;				// 	variable in which the travel direction is saved
+    float currentSoundBearing=0;				//	variable in which the newest measurement of the sound direction is saved
+    float filteredBearing=0;					// 	variable in which the filtered sound direction is saved
+    int oldSwitch=get_selector();				//variable used to catch a change in the selector
+    bool soundTrigger=false;					//variable which is used to indicate if the robot has encountered the sound level assosiated with being near goal
+    uint8_t stabilityCounter=0;					// counter used to count how many of the sound direction measurments in a row are near the filtered direction
+    bool firstSoundLock=false;					// variable to prevent random movement before the first proper direction is determined
+    PCMessage_t computerMessage={0};			//buffer for the computer message
+    setMessage (&computerMessage);				// set the buffer as the buffer to use
+    uint8_t blinkingCounter=0;					//counter used to generate blinking
     /* Infinite loop. */
     while (1) {
 
     	switch(currentStatus)
     	{
-    	case ROBOTSTOP:
+    	case ROBOTSTOP:							// do nothing
     		if(oldSwitch!=get_selector())
     		{
     			currentStatus=ROBOTIDLE;
     		}
     		oldSwitch=get_selector();
     		break;
-    	case ROBOTIDLE:
+    	case ROBOTIDLE:						// wait unitl loud enough sound is detected
 
     		if(blinkingCounter%2==0)
     		{
@@ -150,6 +146,7 @@ int main(void)
     			stabilityCounter=0;
     			set_body_led(0);
     			currentStatus=FOLLOWINGSOUND;
+    			soundTrigger=false;
     			rotateLed(false,rotatingLed,ROTATINGLEDSIZE);
     		}
     		if(oldSwitch!=get_selector())
@@ -159,7 +156,7 @@ int main(void)
 			}
     		oldSwitch=get_selector();
     		break;
-    	case FOLLOWINGSOUND:
+    	case FOLLOWINGSOUND:			// calculate sound direction and follow it. if and obstacle is detected go into avoidance mode
     		set_body_led(0);
     		if(isRotating()==false)
     		{
@@ -210,7 +207,7 @@ int main(void)
     			currentStatus=REACHEDTREASURE;
     		}
     		break;
-    	case AVOIDINGOBSTACLE:
+    	case AVOIDINGOBSTACLE:		//avoid obstacle
 
     		 if(obstacleAvoidance(desiredTravelBearing,&computerMessage.avoidanceDirection,&computerMessage.obstacleDirection)==true)
 			 {
@@ -218,7 +215,7 @@ int main(void)
     			 currentStatus=ROBOTIDLE;
 			 }
     		break;
-    	case REACHEDTREASURE:
+    	case REACHEDTREASURE:	//make a victory dance!(means blink leds)
     		set_body_led(1);
     		setDesiredSpeed(0);
     		if(blinkingCounter%5==0)
@@ -233,7 +230,7 @@ int main(void)
 			}
 			oldSwitch=get_selector();
     		break;
-    	case TESTING:
+    	case TESTING:		//if needed test programms can be inserted here.
        		chprintf((BaseSequentialStream *) &SD3,"This is the TestState, You have no business being here\n\r");
     		break;
     	}
@@ -241,18 +238,30 @@ int main(void)
 		chThdSleep(MS2ST(MAINTHREADPERIOD));
     }
 }
+/**
+ * @brief: function which steers the robot so that he avoid the obstacle and in best cease closer to the sound source
+ *
+ * The obstacle avoidance will first search for both edges of the obstacle.
+ * It will then determine to which one it should drive in order to drive closer to the sound source
+ * Since the direction in which the obstacle is, can not be determined with a great amound of resolution, it often wont drive parallel to the obstacle even though it wants to.
+ * So when the robot detects, that the obstacle came too close it drives so that he distances himself a bit again
+ *
+ * @param[in] intendedTravelBearing: direction in the robot wanted to travel, which also means the direction of the sound
+ * @param[out] avoidanceBearing: pointer where the direction the robot wants to travel to avoid the obstacle should be saved
+ * @param[out] obstacleDirection: pointer where the direction of the Obstacle should be saved
+ * @return: true if function thinks it has successfully avoided the obstacle, false if it is still in progress
+ */
 bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float *obstacleDirection)
 {
 	static float freeBearings[NBOFBEARINGS]={0};
 	static float directionOfObstacle=0;
     static float avoidanceTravelDirection=0;
-    static uint8_t obstacleAvoidanceStep=0;
-    static uint8_t noObstacleAnymore=0;
-   // bool doSkip=true;
+    static uint8_t obstacleAvoidanceStep=0;			//variable used to track in which step in the avoidance process the robot is
+    static uint8_t noObstacleAnymore=0;				// ounter used to count for how many function calls no obstacle was detected
 
 	switch(obstacleAvoidanceStep)
 	{
-	case 0:
+	case 0:									//set all variables to the proper starting values, set the scanning range and start the scan for an unobstructed path
 		if(!isRotating())
 		{
 			directionOfObstacle=wrapAngle(getObstacleDirection()/180*M_PI+getBearing());
@@ -263,7 +272,7 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 			obstacleAvoidanceStep=1;
 		}
 		break;
-	case 1:
+	case 1:							// wait until scan has finished, calculate the avoidance path, indicate that the message buffer should now be filled and the message send to the computer
 		if(getScanStatus()==FINISHEDSCANNING)
 		{
 			getFreeBearing(freeBearings,sizeof(freeBearings)/sizeof(freeBearings[0]));
@@ -291,7 +300,7 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 			}
 		}
 		break;
-	case 2:
+	case 2:	//start travel along the avoidance direction
 
 		if(!isRotating())
 		{
@@ -301,6 +310,8 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 			obstacleAvoidanceStep=3;
 		}
 		break;
+		//travel as lon as needded until no obstacle i detected anymore, or when the obstacle comes too close to the robot create more distance to the obstacle.
+		//if number of times no obstacle is detected is high enough indicate that the obstacle was aovided successfully
 	case 3:
 		if(presenceOfObstacle()==DANGERCLOSE && fabs(getObstacleDirection())<BACKAREA)
 		{
@@ -332,12 +343,12 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 			obstacleAvoidanceStep=3;
 			setDesiredSpeed(TRAVELSPEED);
 		}
-		if(fabs(getObstacleDirection())>BACKAREA)
+		if(fabs(getObstacleDirection())>BACKAREA)	// if data doesnt make sense start from the beginning again
 		{
 			obstacleAvoidanceStep=5;
 		}
 		break;
-	case 5:
+	case 5:				//an error occurred somewhere ->everything needs to be reset properly
 		setDesiredSpeed(0);
 		ignoreObstacle(false);
 		obstacleAvoidanceStep=0;
@@ -346,6 +357,13 @@ bool obstacleAvoidance(float intendedTravelBearing,float *avoidanceBearing,float
 	}
 	return false;
 }
+/**
+ * @brief: with each call steps through the supplied Led pattern
+ *
+ * @param[in] doRotate if it hsould do blink the led, set to true if not set to false, setting it to false will also put out all red ledss
+ * @param[in] ledPattern pattern in which the leds should blink
+ * @param[in] patternSize number of differend steps in the blinking pattern
+ */
 void rotateLed(bool doRotate,const uint8_t ledPattern[][NUMBEROFLED],uint8_t patternSize)
 {
 	static uint8_t ledPatternCounter=0;
