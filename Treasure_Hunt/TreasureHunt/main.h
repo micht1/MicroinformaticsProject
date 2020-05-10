@@ -14,6 +14,8 @@ extern "C" {
 extern messagebus_t bus;
 
 extern parameter_namespace_t parameter_root;
+// data type used in the state event
+typedef enum {ROBOTSTOP=0,ROBOTIDLE,FOLLOWINGSOUND,AVOIDINGOBSTACLE,REACHEDTREASURE,TESTING}robotStatus_t;
 
 #ifdef __cplusplus
 }
