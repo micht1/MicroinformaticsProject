@@ -24,8 +24,8 @@
 
 // defines
 #define ANGLEFILTER 0.1f			// filtecoeffizient used in the simple filter of the angle measurement
-#define ANGLETHRESHOLD 0.30f		// angle under which the newly measured angle is close enough to the filtered angle to be considered stable
-#define STABILITYTHRESHOLD 10		// defines how many new angles need to be considered stable before the travel direction is changed
+#define ANGLETHRESHOLD 0.35f		// angle under which the newly measured angle is close enough to the filtered angle to be considered stable
+#define STABILITYTHRESHOLD 8		// defines how many new angles need to be considered stable before the travel direction is changed
 
 #define TRAVELSPEED 15				// speed at which the robot normally should travel
 #define ATTREASURELEVEL 90000		// sound level which indicates that the robot is near the goal
@@ -40,8 +40,8 @@
 #define NUMBEROFLED 4				// number of red led
 
 // 2 blinking patterns
-#define ROTATINGLEDSIZE 6
-const uint8_t rotatingLed[ROTATINGLEDSIZE][NUMBEROFLED] = {{0,0,0,0},{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1},{1,0,0,0}};
+#define ROTATINGLEDSIZE 4
+const uint8_t rotatingLed[ROTATINGLEDSIZE][NUMBEROFLED] = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
 #define VICTOYDANCESIZE 2
 const uint8_t victoryDance[VICTOYDANCESIZE][NUMBEROFLED] ={{1,0,1,0},{0,1,0,1}};
 // function prototypes
